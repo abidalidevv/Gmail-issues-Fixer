@@ -3,6 +3,7 @@
 
 let accountsData = [];
 let screenStreaming = true;
+let hasConnectedDevice = false;
 
 // ─── RFC 6238 TOTP (Client-Side — Zero HTTP Server Overhead) ─────────────────
 async function generateTOTP(base32Secret) {
@@ -204,6 +205,7 @@ async function fetchDeviceTelemetry() {
         const telBattery = document.getElementById("telBattery");
 
         if (devices.length > 0) {
+            hasConnectedDevice = true;
             dot.className = "status-dot online";
             text.innerText = `${devices.length} Phone(s) Online`;
 
@@ -227,6 +229,7 @@ async function fetchDeviceTelemetry() {
                 </div>
             `).join("");
         } else {
+            hasConnectedDevice = false;
             dot.className = "status-dot offline";
             text.innerText = "No Phone Connected";
             telModel.innerText = "Disconnected";
@@ -238,15 +241,18 @@ async function fetchDeviceTelemetry() {
                     <span style="font-size:0.72rem;">Plug USB & enable USB Debugging</span>
                 </div>
             `;
+            // Immediately hide screen and show placeholder
+            document.getElementById("phoneScreenImg").style.display = "none";
+            document.getElementById("screenPlaceholder").style.display = "block";
         }
     } catch (e) {
         console.error("Telemetry fetch error", e);
     }
 }
 
-// ─── Screen Mirror Refresh ───────────────────────────────────────────────────
+// ─── Screen Mirror Refresh (Zero 404 Overhead) ───────────────────────────────
 function refreshScreenMirror() {
-    if (!screenStreaming) return;
+    if (!screenStreaming || !hasConnectedDevice) return;
     const img = document.getElementById("phoneScreenImg");
     img.src = "/api/screen?t=" + new Date().getTime();
 }

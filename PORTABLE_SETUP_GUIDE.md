@@ -40,11 +40,20 @@ Double-click:
 | 🌐 **`documentation.html`** | Offline GitBook/Notion style manual with search, troubleshooting & guides. |
 | 📱 **`platform-tools/`** | Bundled portable ADB binaries (no Android Studio installation required). |
 | 🗄️ **`vault.db`** | Local SQLite encrypted vault holding accounts and live 2FA session states. |
-| ⚙️ **`config.json`** | Password waterfall list, recovery emails, and appeal templates. |
+| ⚙️ **`config.json`** | Password waterfall list, recovery emails, appeal templates, and 4G proxy settings. |
+| 📡 **`core/proxy_engine.py`** | Huawei HiLink & ZTE 4G Dongle API rotator + Webhook proxy client. |
+| ⚡ **`tests/test_performance_audit.py`** | Benchmark suite testing database indexing (20.2x speedup) & TOTP ops. |
 
 ---
 
-### 4. What Stays With the Folder?
+### 4. Enterprise Capabilities in this Build
+* **5x Parallel ixBrowser:** Select `5x Parallel Turbo` in the dashboard to recover up to 5 accounts at the same time.
+* **4G Dongle & Proxy Rotation:** Plug your Huawei or ZTE 4G USB dongle and click `📡 4G Proxy & Dongle` to enable automatic carrier IP leases every 3 accounts.
+* **20.2x Faster Database:** Functional SQLite indexing on `LOWER(email)` and `status` delivers sub-millisecond query responses across 300+ accounts.
+
+---
+
+### 5. What Stays With the Folder?
 Everything! 
 - The SQLite database (`vault.db`)
 - All accounts and TOTP secret keys

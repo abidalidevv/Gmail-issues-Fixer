@@ -238,9 +238,9 @@ class BatchEngine:
             autopilot.log(f"[Worker #{worker_id + 1}] Finished {email} -> {st}", "SUCCESS" if st == "RECOVERED" else "WARN")
             task_queue.task_done()
 
-            # Anti-detection jitter cooldown
+            # Anti-detection jitter cooldown (adaptive based on worker concurrency)
             if not self.stop_requested and not task_queue.empty():
-                jitter = random.randint(4, 8)
+                jitter = random.randint(2, 4) if self.concurrency >= 3 else random.randint(3, 6)
                 time.sleep(jitter)
 
             # Check if milestone rotation needed

@@ -42,14 +42,13 @@ def _set_state(**kwargs):
 def run_single_step(action: str, email: str, extra: str = ""):
     """Execute interactive recovery action triggered from web dashboard."""
     if action == "rotate_ip":
-        log("Triggering 4G Mobile IP rotation (Airplane mode toggle)...", "WARN")
-        log("NOTE: IP rotation only works on 4G mobile data, not WiFi!", "WARN")
-        # FIX BUG-11: Run in background thread so server doesn't block for 8s
+        log("Triggering Universal 4G Mobile IP rotation...", "WARN")
         def _rotate():
-            res = device.rotate_carrier_ip()
-            log(f"New Public IP Assigned: {res.get('new_ip', 'Unknown')}", "SUCCESS")
+            from core import proxy_engine
+            res = proxy_engine.rotate_ip_universal()
+            log(f"New Public IP Assigned: {res.get('new_ip', 'Unknown')} (via {res.get('source', 'Carrier')})", "SUCCESS")
         threading.Thread(target=_rotate, daemon=True).start()
-        return {"status": "ROTATING", "message": "IP rotation started in background (takes ~8s)"}
+        return {"status": "ROTATING", "message": "IP rotation started in background (takes ~6-8s)"}
 
     elif action == "clear_gms":
         log("Purging Play Services rate-limit databases...", "WARN")

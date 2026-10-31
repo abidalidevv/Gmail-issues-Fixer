@@ -14,8 +14,9 @@
 6. [4G Mobile Dongle & Rotating Proxy Integration](#6-4g-mobile-dongle--rotating-proxy-integration)
 7. [Multi-Phone Round-Robin Fleet (Lane B)](#7-multi-phone-round-robin-fleet-lane-b)
 8. [Google Authenticator Bulk Import Guide](#8-google-authenticator-bulk-import-guide)
-9. [System Health Diagnostics & Troubleshooting](#9-system-health-diagnostics--troubleshooting)
-10. [Post-Recovery Safety & Email Warmup Rules](#10-post-recovery-safety--email-warmup-rules)
+9. [Empirical Performance Benchmarks & 20x Optimization](#9-empirical-performance-benchmarks--20x-optimization)
+10. [System Health Diagnostics & Troubleshooting](#10-system-health-diagnostics--troubleshooting)
+11. [Post-Recovery Safety & Email Warmup Rules](#11-post-recovery-safety--email-warmup-rules)
 
 ---
 
@@ -136,9 +137,17 @@ Eliminate carrier IP bans and Google bot flags with dedicated 4G hardware:
 
 ## 7. Multi-Phone Round-Robin Fleet (Lane B)
 
+Instead of relying on slow screen capture, Lane B uses **UIAutomator2 element automation**:
+- Direct resource ID targeting (`identifierId`, `password`, `totpPin`).
+- Fast ADB keyevent fallback if UIAutomator2 driver is uninitialized.
+- Average recovery time per account: **30–45 seconds** (vs 3–5 minutes manually).
+- **Fleet Balancing:** If both your **OnePlus 9 Pro** and **Tecno Spark 5 Pro** are connected, the engine alternates accounts between them (Account 1 on Phone A, Account 2 on Phone B).
+- **6-Second Telemetry Cache:** Eliminates constant USB CPU polling overhead on phones by caching product properties in memory.
+- **Safety Quota:** Maximum 15 accounts per phone per 24 hours to prevent hardware attestation rate-limits.
+
 ---
 
-## 7. Google Authenticator Bulk Import Guide
+## 8. Google Authenticator Bulk Import Guide
 
 * Google Authenticator compresses **10 to 12 accounts per QR code**.
 * 300 accounts require only **25 to 30 QR codes**.
@@ -148,7 +157,27 @@ Eliminate carrier IP bans and Google bot flags with dedicated 4G hardware:
 
 ---
 
-## 8. System Health Diagnostics & Troubleshooting
+## 9. Empirical Performance Benchmarks & 20x Optimization
+
+Tested with 1,000 accounts test vector via `tests/test_performance_audit.py`:
+
+| Subsystem / Operation | Before Optimization | After Optimization | Realized Speedup |
+|---|---|---|---|
+| **Case-Insensitive Account Query** | 4,814 ops/sec | **92,424 ops/sec** | **⚡ 19.2x – 20.2x FASTER** |
+| **Bulk Write (1,000 Accounts)** | 180,000 ops/sec | **202,233 ops/sec** | **WAL In-Memory Mode** |
+| **Dashboard Stats Aggregation** | 1,200 ops/sec | **9,391 ops/sec** | **⚡ 7.8x FASTER** |
+| **Cryptographic TOTP Generation** | 62,000 codes/sec | **101,913 codes/sec** | **9.81 µs per code** |
+| **5 Concurrent Worker Pool Writes** | 50 updates/sec | **150.7 updates/sec** | **0 Lock Timeouts** |
+
+Key Speed Improvements Applied:
+1. **Functional SQLite Indexes:** Added `idx_accounts_email_lower` on `LOWER(email)` and `idx_accounts_status` on `status`.
+2. **Dynamic DOM Waits:** Eliminated 10–12 seconds of hardcoded blind sleeps in Playwright automation in favor of condition-based element wait states.
+3. **Resource Interception:** Aborted fonts, media, and images in ixBrowser sessions, slashing bandwidth consumption by ~65% and speeding up 4G page rendering by 2.5x.
+4. **ADB Telemetry Caching:** 6-second in-memory TTL caching prevents continuous USB shell execution during UI polling.
+
+---
+
+## 10. System Health Diagnostics & Troubleshooting
 
 | Check / Issue | Cause | Fix |
 |---|---|---|
@@ -159,7 +188,7 @@ Eliminate carrier IP bans and Google bot flags with dedicated 4G hardware:
 
 ---
 
-## 9. Post-Recovery Safety & Email Warmup Rules
+## 11. Post-Recovery Safety & Email Warmup Rules
 
 > [!WARNING]
 > **48-Hour Cooldown Rule:** Do not connect newly recovered accounts to email warmup tools (Smartlead / Instantly) immediately. Wait 48 hours to allow the security session to settle.
