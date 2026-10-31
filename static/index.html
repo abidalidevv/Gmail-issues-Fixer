@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex Identity Orchestrator | Google Account Recovery Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .batch-banner {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .batch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .batch-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .batch-pulse-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #64748B;
+        }
+        .batch-pulse-dot.running {
+            background: #10B981;
+            box-shadow: 0 0 12px #10B981;
+            animation: pulse 1.5s infinite;
+        }
+        .batch-pulse-dot.paused {
+            background: #F59E0B;
+            box-shadow: 0 0 10px #F59E0B;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .batch-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00F2FE, #4FACFE);
+            transition: width 0.4s ease;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+        .batch-stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .device-card-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-size: 0.82rem;
+        }
+        .device-badge-active {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-group">
+            <div class="logo-badge">VORTEX</div>
+            <div>
+                <div class="logo-title">Identity & Recovery Suite</div>
+                <div class="logo-sub">Enterprise 300 Batch & Dual-Lane Orchestrator</div>
+            </div>
+        </div>
+
+        <div class="header-status">
+            <div class="status-pill" id="ixBrowserPill" title="ixBrowser Local API (Port 53200)">
+                <div id="ixDot" class="status-dot offline"></div>
+                <span id="ixStatusText">ixBrowser Offline</span>
+            </div>
+            <div class="status-pill" id="multiDevicePill">
+                <div id="deviceDot" class="status-dot offline"></div>
+                <span id="deviceStatusText">Scanning Devices...</span>
+            </div>
+            <button class="btn btn-secondary" onclick="openDiagModal()" style="display:inline-flex; align-items:center; gap:4px;">🩺 Diagnostics</button>
+            <button class="btn btn-primary" onclick="openAddModal()">+ Add Account</button>
+            <button class="btn btn-secondary" onclick="exportWarmupCsv()">⬇ Export for Warmup</button>
+            <a href="/docs.html" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px;">📖 Docs</a>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- 🚀 300 Batch Auto-Recovery Control Center -->
+        <div class="batch-banner">
+            <div class="batch-header">
+                <div class="batch-title-group">
+                    <div id="batchDot" class="batch-pulse-dot"></div>
+                    <div>
+                        <div style="font-weight:700; font-size:1.1rem; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
+                            300 Batch Auto Recovery Engine
+                            <span id="batchStateBadge" class="status-tag PENDING" style="font-size:0.75rem;">IDLE</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">
+                            Dual-Lane Dispatcher · Multi-Phone Round-Robin · Auto 4G IP Rotate · Jitter Cooldown
+                        </div>
+                    </div>
+                </div>
+
+                <div class="batch-controls">
+                    <button id="btnBatchStart" class="btn btn-primary" onclick="startBatchAuto()" style="background:linear-gradient(135deg, #10B981, #059669); font-weight:700;">
+                        ▶ Start Batch Auto
+                    </button>
+                    <button id="btnBatchPause" class="btn btn-secondary" onclick="pauseBatchAuto()" style="display:none;">
+                        ⏸ Pause
+                    </button>
+                    <button id="btnBatchResume" class="btn btn-secondary" onclick="resumeBatchAuto()" style="display:none;">
+                        ▶ Resume
+                    </button>
+                    <button id="btnBatchStop" class="btn btn-secondary" onclick="stopBatchAuto()" style="display:none; color:var(--danger);">
+                        ⏹ Stop
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="batchProgressBar" class="progress-bar-fill"></div>
+            </div>
+
+            <div class="batch-stats-row">
+                <div>Progress: <span id="batchProgressTxt" style="font-weight:700; color:var(--accent-cyan);">0 / 0 (0%)</span></div>
+                <div>Recovered: <span id="batchRecoveredTxt" style="font-weight:700; color:var(--success);">0</span></div>
+                <div>Failed: <span id="batchFailedTxt" style="font-weight:700; color:var(--danger);">0</span></div>
+                <div>Active Account: <span id="batchCurrentEmail" style="font-family:var(--font-mono); color:var(--text-primary);">None</span></div>
+                <div>Lane & Device: <span id="batchCurrentLane" style="color:var(--accent-blue);">Standby</span></div>
+            </div>
+        </div>
+
+        <!-- Top Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card total">
+                <div class="metric-label">Total Accounts</div>
+                <div class="metric-value" id="metricTotal">0</div>
+            </div>
+            <div class="metric-card recovered">
+                <div class="metric-label">Recovered & Active</div>
+                <div class="metric-value" id="metricRecovered">0</div>
+            </div>
+            <div class="metric-card pending">
+                <div class="metric-label">Pending Recovery</div>
+                <div class="metric-value" id="metricPending">0</div>
+            </div>
+            <div class="metric-card suspended">
+                <div class="metric-label">Flagged / Action Req</div>
+                <div class="metric-value" id="metricSuspended">0</div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Grid -->
+        <div class="workspace-grid">
+
+            <!-- Left: Real Hardware Mirror & Multi-Device Live Controls -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">📱 Multi-Phone Hardware Fleet</div>
+                    <span id="mirrorBadge" class="status-tag RECOVERED" style="font-size:0.7rem;">LIVE STREAM</span>
+                </div>
+
+                <!-- Multi-Device List -->
+                <div id="deviceListContainer" style="margin-bottom:0.75rem;">
+                    <div class="device-card-item">
+                        <span>OnePlus 9 Pro</span>
+                        <span class="device-badge-active">Scanning...</span>
+                    </div>
+                </div>
+
+                <div class="mirror-wrapper">
+                    <div class="screen-container">
+                        <img id="phoneScreenImg" src="/api/screen" alt="Phone Screen Stream" onerror="handleScreenError()" onload="handleScreenLoad()">
+                        <div id="screenPlaceholder" class="screen-placeholder" style="display:none;">
+                            Device Disconnected<br>
+                            <span style="font-size:0.75rem; color:#64748B;">Connect OnePlus / Tecno USB Debugging</span>
+                        </div>
+                    </div>
+
+                    <div class="phone-nav-bar">
+                        <button class="nav-btn" onclick="sendKey(4)" title="Back">◀ Back</button>
+                        <button class="nav-btn" onclick="sendKey(3)" title="Home">● Home</button>
+                        <button class="nav-btn" onclick="sendKey(66)" title="Enter">✔ Enter</button>
+                    </div>
+                </div>
+
+                <!-- Telemetry Info -->
+                <div class="telemetry-list">
+                    <div class="telemetry-row">
+                        <span style="color:var(--text-secondary);">Active Phone:</span>
+                        <span id="telModel">Detecting...</span>
+                    </div>
+                    <div class="telemetry-row">
+                        <span style="color:var(--text-secondary);">Carrier / SIM:</span>
+                        <span id="telCarrier">Scanning...</span>
+                    </div>
+                    <div class="telemetry-row">
+                        <span style="color:var(--text-secondary);">Battery:</span>
+                        <span id="telBattery">--</span>
+                    </div>
+                    <div class="telemetry-row">
+                        <span style="color:var(--text-secondary);">Current 4G IP:</span>
+                        <span id="telIp" style="color:var(--accent-cyan);">Resolving...</span>
+                    </div>
+                </div>
+
+                <!-- Hardware Action Buttons -->
+                <div class="btn-grid">
+                    <button class="btn btn-secondary" onclick="triggerAction('rotate_ip')">
+                        🔄 Rotate 4G IP
+                    </button>
+                    <button class="btn btn-secondary" onclick="triggerAction('clear_gms')">
+                        🧹 Reset GMS Quota
+                    </button>
+                    <button class="btn btn-primary btn-full" onclick="triggerAction('launch_native')">
+                        🚀 Launch Native No-QR Login
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Account Recovery Orchestration Table -->
+            <div class="panel" style="flex:1;">
+                <div class="panel-header">
+                    <div class="panel-title">👥 Managed Accounts & Live 2FA Injector</div>
+                    <input type="text" id="searchInput" class="search-box" placeholder="Search email or client..." onkeyup="filterAccounts()">
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Account Email</th>
+                                <th>Status</th>
+                                <th>Live 2FA Code</th>
+                                <th>Recovery Actions</th>
+                                <th>Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">
+                                    Loading accounts vault...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Live Console Log Stream -->
+                <div class="panel-header" style="margin-top:0.5rem;">
+                    <div class="panel-title" style="font-size:0.95rem;">⚡ Real-Time ADB, CDP & Network Stream</div>
+                </div>
+                <div class="console-panel" id="consoleLogs">
+                    <div class="log-entry">
+                        <span class="log-time">[00:00:00]</span>
+                        <span class="log-msg INFO">Vortex Enterprise Orchestrator initialized. Multi-Phone & 300 Batch Engine ready.</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Add Account Modal -->
+    <div id="addModal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 style="font-size:1.25rem; font-weight:700;">Add Client Account</h2>
+            <div class="form-group">
+                <label>Gmail / Google Email</label>
+                <input type="email" id="modalEmail" placeholder="client@gmail.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="text" id="modalPassword" placeholder="Account Password" required>
+            </div>
+            <div class="form-group">
+                <label>2FA Authenticator Secret Key (Base32)</label>
+                <input type="text" id="modalSecret" placeholder="e.g. JBSWY3DPEHPK3PXP (Optional)">
+            </div>
+            <div class="form-group">
+                <label>ixBrowser Profile ID or Local Hash (Optional)</label>
+                <input type="text" id="modalProfile" placeholder="e.g. 1001 or profile hash">
+            </div>
+            <div class="form-group">
+                <label>Notes / Client Name</label>
+                <input type="text" id="modalNotes" placeholder="e.g. Client FB Campaign">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitAddAccount()">Save to Vault</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Diagnostics Modal -->
+    <div id="diagModal" class="modal-overlay">
+        <div class="modal-card" style="max-width:650px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2 style="font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
+                    🩺 Vortex Health & Diagnostics Audit
+                    <span id="diagOverallBadge" class="status-tag RECOVERED" style="font-size:0.75rem;">CHECKING...</span>
+                </h2>
+                <button class="btn btn-secondary" onclick="closeDiagModal()" style="padding:0.25rem 0.5rem;">✕</button>
+            </div>
+            <div id="diagContent" style="max-height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding-right:0.5rem;">
+                <div style="text-align:center; padding:2rem; color:var(--text-muted);">Running diagnostic audit...</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem; border-top:1px solid rgba(255,255,255,0.08); padding-top:1rem;">
+                <span id="diagTimestamp" style="font-size:0.75rem; color:var(--text-muted);">--</span>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn btn-secondary" onclick="runDiagnosticsAudit()">🔄 Re-Run Audit</button>
+                    <button class="btn btn-primary" onclick="closeDiagModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

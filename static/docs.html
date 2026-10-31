@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VORTEX Suite — Master Documentation (GitBook / Notion Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0B0F19;
+            --bg-surface: #111827;
+            --bg-elevated: #1F2937;
+            --bg-code: #0D1117;
+            --border-subtle: #2D3748;
+            --border-focus: #3B82F6;
+            --text-primary: #F9FAFB;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --accent-blue: #3B82F6;
+            --accent-cyan: #06B6D4;
+            --accent-purple: #8B5CF6;
+            --accent-green: #10B981;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --sidebar-width: 290px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.65;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Sidebar (GitBook Style) */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            z-index: 50;
+            overflow-y: auto;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .brand-title {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-cyan);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 1.75rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-link.active {
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Main Content Container */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 2.5rem 3rem 6rem;
+            max-width: calc(100% - var(--sidebar-width));
+        }
+
+        .content {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Notion Style Breadcrumb & Header */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .page-cover {
+            margin-bottom: 2.5rem;
+        }
+
+        .page-emoji {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .page-title {
+            font-family: var(--font-heading);
+            font-size: 2.75rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-description {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            line-height: 1.6;
+        }
+
+        /* Typography & Notion Elements */
+        h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin: 3rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h3 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 0.75rem;
+            color: #E2E8F0;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            color: #CBD5E1;
+            font-size: 0.975rem;
+        }
+
+        /* Callout Cards (Notion Style) */
+        .callout {
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            position: relative;
+        }
+
+        .callout-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .callout-body {
+            flex: 1;
+            font-size: 0.925rem;
+        }
+
+        .callout-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .callout.info {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .callout.danger {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .callout.success {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Code Blocks with Copy Button */
+        .code-container {
+            position: relative;
+            margin: 1.25rem 0;
+            background: var(--bg-code);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: var(--font-sans);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        pre {
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: #E2E8F0;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            background: var(--bg-surface);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            color: #CBD5E1;
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Interactive Checklist (Notion Style) */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            padding: 0.85rem 1rem;
+            border-radius: 6px;
+            transition: border-color 0.15s ease;
+        }
+
+        .checklist-item:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .checklist-item input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        .checklist-label {
+            font-size: 0.925rem;
+            color: #E2E8F0;
+        }
+
+        .checklist-subtext {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Step Process Cards */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .step-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.25rem;
+            position: relative;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+
+        .step-num {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.12);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.75rem;
+        }
+
+        .step-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        /* Architecture Diagram Box */
+        .diagram-box {
+            background: var(--bg-code);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.35;
+            margin: 1.5rem 0;
+        }
+
+        /* Floating Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .back-to-top:hover {
+            background: var(--accent-blue);
+            transform: scale(1.08);
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+            .main-wrapper {
+                margin-left: 0;
+                max-width: 100%;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="brand-header">
+            <div class="brand-icon">⚡</div>
+            <div>
+                <div class="brand-title">VORTEX DOCS</div>
+            </div>
+            <div class="brand-badge">GitBook</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Getting Started</div>
+            <ul class="nav-list">
+                <li><a href="#overview" class="nav-link active"><span class="nav-icon">📌</span> Overview & Architecture</a></li>
+                <li><a href="#data-needed" class="nav-link"><span class="nav-icon">📋</span> Required Data Checklist</a></li>
+                <li><a href="#quickstart" class="nav-link"><span class="nav-icon">🚀</span> 3-Step Fast Track</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Core Operations</div>
+            <ul class="nav-list">
+                <li><a href="#authenticator-import" class="nav-link"><span class="nav-icon">📸</span> Authenticator QR Bulk Import</a></li>
+                <li><a href="#how-to-run" class="nav-link"><span class="nav-icon">🎮</span> Running the Suite</a></li>
+                <li><a href="#dual-lane" class="nav-link"><span class="nav-icon">🔄</span> Dual-Lane (ixBrowser + Phone)</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Maintenance & Safety</div>
+            <ul class="nav-list">
+                <li><a href="#troubleshooting" class="nav-link"><span class="nav-icon">🛠️</span> Troubleshooting Matrix</a></li>
+                <li><a href="#manual-fallbacks" class="nav-link"><span class="nav-icon">🛡️</span> Manual Fallback Procedures</a></li>
+                <li><a href="#warmup-safety" class="nav-link"><span class="nav-icon">⚠️</span> Warmup & 48h Safety Rules</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+        <main class="content">
+
+            <!-- Notion Style Header -->
+            <div class="breadcrumb">
+                <a href="#">VORTEX Suite</a>
+                <span>/</span>
+                <a href="#">Documentation</a>
+                <span>/</span>
+                <span>Operational Manual</span>
+            </div>
+
+            <div class="page-cover">
+                <div class="page-emoji">⚡</div>
+                <h1 class="page-title">VORTEX Suite Master Operational Manual</h1>
+                <p class="page-description">
+                    Complete end-to-end guide for recovering 300–400 dormant Google accounts, handling FIDO2 caBLE QR challenges, waterfall passwords, and session preservation inside ixBrowser profiles.
+                </p>
+            </div>
+
+            <!-- SECTION 1: Overview & Architecture -->
+            <section id="overview">
+                <h2><span>📌</span> 1. Overview & Dual-Lane Architecture</h2>
+                <p>
+                    VORTEX is an automated <strong>Hardware-in-the-Loop (HIL)</strong> and anti-detect browser orchestrator designed to solve Google's critical risk tier challenge: <strong>Cross-Device FIDO2 caBLE QR Code</strong>.
+                </p>
+
+                <div class="diagram-box">
+                                     ┌─────────────────────────────┐
+                                     │  VORTEX WEB DASHBOARD (UI)  │
+                                     │    http://127.0.0.1:8765    │
+                                     └──────────────┬──────────────┘
+                                                    │
+                           ┌────────────────────────┴────────────────────────┐
+                           ▼                                                 ▼
+              ┌─────────────────────────┐                       ┌─────────────────────────┐
+              │  LANE A: ixBrowser      │                       │  LANE B: Physical Phone │
+              │  (PC Profiles)          │                       │  (OnePlus / Tecno USB)  │
+              ├─────────────────────────┤                       ├─────────────────────────┤
+              │ • Cloud Session Sync    │                       │ • Zero-QR Native Flow   │
+              │ • "Try Another Way"     │                       │ • 4G Cellular IP Toggle │
+              │ • Live TOTP Injection   │                       │ • GMS Quota Purge       │
+              │ • BotGuard Micro-Delay  │                       │ • Hardware TEE Bypass   │
+              └─────────────────────────┘                       └─────────────────────────┘</div>
+
+                <div class="callout info">
+                    <div class="callout-icon">💡</div>
+                    <div class="callout-body">
+                        <strong>Kyun Banaya Gaya?</strong> Jab 90+ din dormant accounts login hote hain, Google SMS ke bajaye phone camera se QR scan karne ka bolta hai. Ek phone se 3-4 accounts scan hone ke baad Google Play Services hardware limit laga deta hai. VORTEX is cycle ko 100% bypass karta hai.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: What Data You Need to Provide -->
+            <section id="data-needed">
+                <h2><span>📋</span> 2. What Data You Need to Provide (Checklist)</h2>
+                <p>Aapko sirf yeh 4 basic cheezain deni hain. Inke ilawa kisi cheez ki zaroorat nahi:</p>
+
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="c1" checked>
+                        <div>
+                            <div class="checklist-label">Google Authenticator Export QR Screenshots</div>
+                            <div class="checklist-subtext">Authenticator app se 25-30 screenshots le kar <code>qr_images/</code> folder mein daal dein.</div>
+                        </div>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="c2" checked>
+                        <div>
+                            <div class="checklist-label">Waterfall Passwords (3 se 4 Candidates)</div>
+                            <div class="checklist-subtext">Already <code>config.json</code> mein set hain: <code>Abidali@2xx</code>, <code>Abidali@72xx</code>, <code>Abidali2xx</code>.</div>
+                        </div>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="c3" checked>
+                        <div>
+                            <div class="checklist-label">Recovery Emails Address</div>
+                            <div class="checklist-subtext">Already configured: <code>abidmcs99@gmail.com</code> (60%) aur <code>abidmmp100@gmail.com</code> (40%).</div>
+                        </div>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="c4">
+                        <div>
+                            <div class="checklist-label">Registered Physical SIM Cards (Jazz / Zong)</div>
+                            <div class="checklist-subtext">Phone mein active hone chahiye agar kisi account par SMS OTP verification trigger ho.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: Quick Start -->
+            <section id="quickstart">
+                <h2><span>🚀</span> 3. Quick Start (3-Step Fast Track)</h2>
+                <p>Agar aapko foran kaam shuru karna hai, toh sirf yeh 3 aasan steps follow karein:</p>
+
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <span class="step-num">STEP 01</span>
+                        <div class="step-title">Take QR Screenshots</div>
+                        <p class="step-desc">
+                            Phone par Authenticator kholein ➔ <strong>Transfer accounts</strong> ➔ <strong>Export</strong> ➔ Next karte huye screenshots lein aur <code>qr_images/</code> folder mein daalein.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">STEP 02</span>
+                        <div class="step-title">Run Auto-Decoder</div>
+                        <p class="step-desc">
+                            Terminal mein <code>python decode_authenticator_qr.py</code> run karein. Saare 300 accounts 2 second mein database mein aa jayenge.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">STEP 03</span>
+                        <div class="step-title">Open Dashboard</div>
+                        <p class="step-desc">
+                            Desktop par <code>Launch_Suite.bat</code> par click karein. Dashboard <code>http://127.0.0.1:8765</code> par open ho jayega aur live recovery shuru karein!
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: Authenticator Bulk Import -->
+            <section id="authenticator-import">
+                <h2><span>📸</span> 4. Google Authenticator Bulk Import Guide</h2>
+                
+                <div class="callout warning">
+                    <div class="callout-icon">⚠️</div>
+                    <div class="callout-body">
+                        <strong>Security Note:</strong> Apna Authenticator QR data kisi chat ya cloud par paste mat karein! Humne aapke PC par <strong>100% offline decoder</strong> bana diya hai jo bina internet ke aapke computer par hi process karta hai.
+                    </div>
+                </div>
+
+                <h3>Sawal: "Kya 300 QR Codes Aayenge?"</h3>
+                <p>
+                    <strong>Hargiz nahi!</strong> Google Authenticator ek single QR code ke andar <strong>10 se 12 accounts</strong> compress karta hai. 300 accounts ke sirf <strong>25 se 30 QR codes</strong> bante hain.
+                </p>
+
+                <h3>Automatic Screenshot Scanner Ka Tareeqa:</h3>
+                <ol style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1; font-size: 0.95rem;">
+                    <li style="margin-bottom: 0.5rem;">Phone par Authenticator mein <strong>Export</strong> screen par jayein.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Next ➔ Screenshot ➔ Next ➔ Screenshot</strong> karte jayein (1 se 2 minute ka kaam hai).</li>
+                    <li style="margin-bottom: 0.5rem;">Saare screenshots is folder mein copy kar dein:
+                        <br><code>C:\Users\Ali\Desktop\gmail issue fix\qr_images\</code>
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">PowerShell ya CMD mein command run karein:</li>
+                </ol>
+
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>PowerShell</span>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('python decode_authenticator_qr.py')">Copy</button>
+                    </div>
+                    <pre><code>python decode_authenticator_qr.py</code></pre>
+                </div>
+
+                <p>Decoder console output kuch aisa dikhayega:</p>
+                <div class="diagram-box">
+[+] Found 28 screenshots in qr_images/ folder! Scanning...
+  ✓ Found QR Code in: screenshot_01.png
+  ✓ Found QR Code in: screenshot_02.png
+  ...
+[+] SUCCESS! Successfully extracted total 312 accounts!
+[+] All 312 accounts saved to: authenticator_extracted.csv
+[+] All accounts imported directly into Vortex Vault Database!</div>
+            </section>
+
+            <!-- SECTION 5: How to Run & Dual Lane -->
+            <section id="how-to-run">
+                <h2><span>🎮</span> 5. How to Run & Dual-Lane Operation</h2>
+                <p>
+                    VORTEX Suite ko aap do tareeqon se use kar sakte hain:
+                </p>
+
+                <h3>Lane 1: Web Dashboard (Visual 1-Click Interface)</h3>
+                <p>
+                    Browser mein <code>http://127.0.0.1:8765</code> kholein. Yahan aapko har account ke live rotating 2FA codes nazar aayenge:
+                </p>
+                <ul style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1;">
+                    <li style="margin-bottom: 0.4rem;"><strong>📧 Email Button:</strong> Active browser ya phone window mein automatically email inject karta hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>🔑 Pass Button:</strong> Waterfall password inject karta hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>🛡️ 2FA Button:</strong> Live 30-second TOTP calculate karke (expiry guard ke sath) auto-type karta hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>🌐 ixBrowser Button:</strong> Automated Playwright flow trigger karta hai jo "Try another way" se QR bypass karta hai.</li>
+                </ul>
+
+                <h3 id="dual-lane">Lane 2: Physical Android Phone (Zero-QR Flow)</h3>
+                <p>
+                    Agar PC par koi account stubborn ho jaye aur bar bar QR code force kare:
+                </p>
+                <ol style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1;">
+                    <li style="margin-bottom: 0.4rem;">OnePlus 9 Pro ya Tecno Spark 5 Pro USB cable se lagayein.</li>
+                    <li style="margin-bottom: 0.4rem;">Dashboard par dabayein: <strong><code>🚀 Launch Native No-QR Login</code></strong>.</li>
+                    <li style="margin-bottom: 0.4rem;">Phone par native Android login khul jayega jisme <strong>QR code kabhi nahi aata</strong>.</li>
+                    <li style="margin-bottom: 0.4rem;">Dashboard se Email ➔ Password ➔ 2FA click karein aur account recover ho jayega!</li>
+                </ol>
+            </section>
+
+            <!-- SECTION 6: Troubleshooting Matrix -->
+            <section id="troubleshooting">
+                <h2><span>🛠️</span> 6. Troubleshooting Matrix (Issues & Solutions)</h2>
+                <p>Agar koi issue aaye, toh uska exact solution neeche table mein maujood hai:</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Masla / Error</th>
+                                <th style="width: 30%;">Wajah (Reason)</th>
+                                <th style="width: 45%;">Hal (Exact Solution)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong style="color:var(--accent-red);">"You have scanned from this device too many times"</strong></td>
+                                <td>Google Play Services hardware attestation rate limit (3-4 scans limit hit).</td>
+                                <td>
+                                    1. Dashboard par <strong><code>🧹 Reset GMS Quota</code></strong> dabayein.<br>
+                                    2. <strong><code>🔄 Rotate 4G IP</code></strong> dabayein (Airplane mode toggle).<br>
+                                    3. Ya phone switch karein (OnePlus se Tecno par shift karein).
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:var(--accent-amber);">"Wrong password" error</strong></td>
+                                <td>1st password match nahi hua.</td>
+                                <td>
+                                    Script automatically <strong>max 3 attempts</strong> try karegi. Agar 3 fail ho jayein toh account lock hone se pehle stop ho kar <code>WRONG_PASSWORD</code> mark karegi. <code>config.json</code> mein password verify karein.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:var(--accent-cyan);">"Verify it's you" (SMS OTP Screen)</strong></td>
+                                <td>Google ne registered SIM number par 6-digit code bheja.</td>
+                                <td>
+                                    SIM wale phone par SMS dekhein. Dashboard par OTP input ka prompt aayega, wahan code enter karein.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:var(--accent-purple);">"Account disabled / Suspended"</strong></td>
+                                <td>90 din dormancy ki wajah se account review par hai.</td>
+                                <td>
+                                    Bot automatically Google ke appeal form par contact email <code>abidmcs99@gmail.com</code> aur delegation message daal kar appeal submit kar dega.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:var(--text-muted);">Phone mirror "Device Disconnected"</strong></td>
+                                <td>USB Debugging band hai ya cable loose hai.</td>
+                                <td>
+                                    Phone Settings ➔ Developer Options mein jayein. <strong>USB Debugging</strong> ko OFF karke ON karein aur popup par "Always allow" tick karein.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECTION 7: Manual Fallback -->
+            <section id="manual-fallbacks">
+                <h2><span>🛡️</span> 7. Manual Fallback Procedures</h2>
+                <p>
+                    Agar automated script kisi security check par ruk jaye, toh manual assist kaise karein:
+                </p>
+
+                <div class="callout success">
+                    <div class="callout-icon">🎯</div>
+                    <div class="callout-body">
+                        <strong>Visual Phone Control:</strong> Dashboard ke left panel par live screen stream chal rahi hoti hai. Aap PC mouse se direct phone screen par click kar sakte hain, aur neeche <code>◀ Back</code>, <code>● Home</code>, aur <code>✔ Enter</code> buttons se phone operate kar sakte hain.
+                    </div>
+                </div>
+
+                <div class="callout info">
+                    <div class="callout-icon">📋</div>
+                    <div class="callout-body">
+                        <strong>1-Click Live TOTP Copy:</strong> Dashboard par har account ke aagay live rotating 6-digit code hota hai. Code par click karte hi woh copy ho jata hai, aap direct ixBrowser mein CTRL+V karke paste kar sakte hain.
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 8: Warmup Rules -->
+            <section id="warmup-safety">
+                <h2><span>⚠️</span> 8. Post-Recovery Safety & Email Warmup Rules</h2>
+
+                <div class="callout danger">
+                    <div class="callout-icon">🛑</div>
+                    <div class="callout-body">
+                        <strong>CRITICAL SAFETY RULE:</strong> Recover hone ke foran baad accounts ko Instantly ya Smartlead warmup mein mat daalein!
+                    </div>
+                </div>
+
+                <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem; color: #CBD5E1;">
+                    <li style="margin-bottom: 0.75rem;">
+                        <strong>48-Hour Quarantine Period:</strong> Account recover hone ke baad 48 ghante tak koi email na bhejein. Google ka Socrates AI Pakistani mobile IP se USA datacenter IP ke jump ko suspicious samajh kar re-suspend kar sakta hai.
+                    </li>
+                    <li style="margin-bottom: 0.75rem;">
+                        <strong>Batching Limit:</strong> Ek din mein ek SIM/Device se 10 se 15 accounts se zyada recover na karein.
+                    </li>
+                    <li style="margin-bottom: 0.75rem;">
+                        <strong>Warmup Ready Export:</strong> Dashboard par <strong><code>⬇ Export for Warmup</code></strong> dabane se CSV download hoti hai jo Instantly / Smartlead format mein ready hoti hai.
+                    </li>
+                </ul>
+
+                <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 3rem 0;">
+
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                    VORTEX Suite · Operational Manual · Target: Windows 11 · ixBrowser · Physical Android<br>
+                    Run at any time: <code>Launch_Suite.bat</code>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Back to top button -->
+    <a href="#" class="back-to-top" title="Back to top">↑</a>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+# VORTEX Suite .gitignore
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Sensitive Credentials & Databases
+vault.db
+vault.db-journal
+vault.db-wal
+vault_sessions/
+accounts.csv
+qr_images/*.png
+qr_images/*.jpg
+qr_images/*.jpeg
+authenticator_extracted.csv
+
+# Large Archives & Builds
+*.zip
+
+# Logs & Temporary files
+*.log
+*.tmp
+.idea/
+.vscode/

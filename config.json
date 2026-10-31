@@ -1,0 +1,24 @@
+{
+  "passwords_waterfall": [
+    "Abidali@2xx",
+    "Abidali@72xx",
+    "Abidali2xx"
+  ],
+  "max_password_attempts": 3,
+  "recovery_emails": [
+    "abidmcs99@gmail.com",
+    "abidmmp100@gmail.com"
+  ],
+  "registered_phones": [
+    "+923037582xxx",
+    "+923147582xxx"
+  ],
+  "appeal_settings": {
+    "contact_email": "abidmcs99@gmail.com",
+    "appeal_message": "Dear Google Accounts Team, this account is used for legitimate client social media and asset management workflows. It experienced an operational dormancy for approximately 90 days. All recovery details are actively maintained by me. Kindly restore access so we can complete security verification."
+  },
+  "devices_available": [
+    "OnePlus 9 Pro",
+    "Tecno Spark 5 Pro"
+  ]
+}
