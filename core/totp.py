@@ -12,7 +12,8 @@ def generate_totp(secret: str, interval: int = 30) -> tuple[str, int]:
     """
     if not secret:
         return "------", 0
-    cleaned = secret.replace(" ", "").strip().upper()
+    # Strip whitespace, dashes, and existing padding before re-padding
+    cleaned = secret.replace(" ", "").replace("-", "").replace("=", "").strip().upper()
     missing_padding = len(cleaned) % 8
     if missing_padding:
         cleaned += '=' * (8 - missing_padding)

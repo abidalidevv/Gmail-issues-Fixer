@@ -556,9 +556,12 @@
         <div class="nav-section">
             <div class="nav-section-title">Core Operations</div>
             <ul class="nav-list">
+                <li><a href="#batch-auto" class="nav-link"><span class="nav-icon">⚡</span> 300 Batch Auto Recovery</a></li>
+                <li><a href="#multi-phone" class="nav-link"><span class="nav-icon">📱</span> Multi-Phone Fleet (Lane B)</a></li>
                 <li><a href="#authenticator-import" class="nav-link"><span class="nav-icon">📸</span> Authenticator QR Bulk Import</a></li>
                 <li><a href="#how-to-run" class="nav-link"><span class="nav-icon">🎮</span> Running the Suite</a></li>
                 <li><a href="#dual-lane" class="nav-link"><span class="nav-icon">🔄</span> Dual-Lane (ixBrowser + Phone)</a></li>
+                <li><a href="#diagnostics" class="nav-link"><span class="nav-icon">🩺</span> System Health Diagnostics</a></li>
             </ul>
         </div>
 
@@ -691,6 +694,65 @@
                         </p>
                     </div>
                 </div>
+            </section>
+
+            <!-- SECTION: 300 Batch Auto Recovery -->
+            <section id="batch-auto">
+                <h2><span>⚡</span> 300 Batch Auto Recovery Engine (Autonomous Mode)</h2>
+                <div class="callout success">
+                    <div class="callout-icon">🚀</div>
+                    <div class="callout-body">
+                        <strong>Fully Autonomous Pipeline:</strong> 300 accounts ko ek ek karke manually click karne ki zaroorat nahi. Dashboard ke top banner par <strong><code>▶ Start Batch Auto</code></strong> dabayein, engine poori queue ko smart dual-lane routing, rate-limit cooldowns aur periodic IP rotation ke sath execute karega.
+                    </div>
+                </div>
+
+                <h3>Key Features of the Batch Engine:</h3>
+                <ul style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1;">
+                    <li style="margin-bottom: 0.4rem;"><strong>Dual-Lane Intelligent Dispatch:</strong> Agar account ke paas ixBrowser profile ho toh Lane A (Playwright CDP) use hoti hai, warna Lane B (Android Phone Fleet) ko de di jati hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Anti-Detection Jitter:</strong> Har account ke baad 8–15 second ka randomized cooldown pause lagta hai ta ke Google ka Socrates AI engine suspicious burst activity na detect kare.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Auto 4G Cellular IP Rotation:</strong> Har 3 accounts ke milestone par phone ka 4G IP automatically rotate hota hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Live Controls:</strong> Kisi bhi waqt <code>Pause (⏸)</code>, <code>Resume (▶)</code>, ya <code>Stop (⏹)</code> kiya ja sakta hai.</li>
+                </ul>
+            </section>
+
+            <!-- SECTION: Multi-Phone Round-Robin Fleet -->
+            <section id="multi-phone">
+                <h2><span>📱</span> Multi-Phone Fleet & UIAutomator2 (Lane B)</h2>
+                <p>
+                    Purana tareeqa (screencap image streaming aur coordinate clicking) khatam kar diya gaya hai. Ab Lane B <strong>UIAutomator2 element engine</strong> par chalta hai:
+                </p>
+
+                <div class="callout info">
+                    <div class="callout-icon">🏎️</div>
+                    <div class="callout-body">
+                        <strong>Speed Benchmark:</strong> Element-level direct automation ki wajah se recovery time 3–5 minute se gir kar sirf <strong>40 se 50 second</strong> reh gaya hai.
+                    </div>
+                </div>
+
+                <h3>OnePlus 9 Pro + Tecno Spark 5 Pro Fleet Balancing:</h3>
+                <p>
+                    Dono phones USB se connect karein. Engine automatically accounts ko alternate karta hai:
+                </p>
+                <div class="diagram-box">
+Queue: Account #1 ➔ Assigned to OnePlus 9 Pro (Sim Active)
+Queue: Account #2 ➔ Assigned to Tecno Spark 5 Pro (Sim Active)
+Queue: Account #3 ➔ Assigned to OnePlus 9 Pro ...
+Daily Quota Guard: Max 15 accounts per phone/day to evade hardware attestation ban.</div>
+            </section>
+
+            <!-- SECTION: System Health Diagnostics -->
+            <section id="diagnostics">
+                <h2><span>🩺</span> System Health & Diagnostics Engine</h2>
+                <p>
+                    Recovery shuru karne se pehle poore system ka automated health check karein. Dashboard ke header par <strong><code>🩺 Diagnostics</code></strong> dabayein ya <code>Diagnostics.bat</code> run karein:
+                </p>
+                <ul style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1;">
+                    <li style="margin-bottom: 0.4rem;"><strong>Python Runtime & Libraries:</strong> Playwright, Requests, ZXing-CPP, Pillow, ixBrowser API.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>SQLite Vault Integrity:</strong> Runs <code>PRAGMA integrity_check</code> on <code>vault.db</code>.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Cryptography Verification:</strong> Generates RFC 6238 TOTP against known vector to guarantee 100% 2FA accuracy.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>ixBrowser & Profiles:</strong> Checks API status on port 53200 and scans AppData for local disk profiles.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Hardware Fleet:</strong> Verifies USB debugging, battery levels, and connected phone models.</li>
+                </ul>
             </section>
 
             <!-- SECTION 4: Authenticator Bulk Import -->

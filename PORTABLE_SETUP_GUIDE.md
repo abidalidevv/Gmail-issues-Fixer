@@ -32,6 +32,8 @@ Double-click:
 | File / Folder | Purpose |
 |---|---|
 | 🚀 **`Launch_Suite.bat`** | Main launcher. Double-click to start the dashboard anytime. |
+| 🩺 **`Diagnostics.bat`** | System health & diagnostic auditor. Checks phone, ixBrowser & DB. |
+| 📦 **`Build_Release.bat`** | Compresses clean portable package for transferring to other PCs. |
 | ⚙️ **`Setup_Environment.bat`** | One-time setup script for any new laptop/PC. |
 | 📸 **`decode_authenticator_qr.py`** | Decodes Google Authenticator bulk export screenshots. |
 | 📁 **`qr_images/`** | Drop your 25–30 QR code screenshots here for bulk import. |

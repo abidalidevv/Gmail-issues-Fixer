@@ -42,7 +42,7 @@ def clean_pycache():
 
 def build_zip():
     print("=" * 68)
-    print("      ⚡ BUILDING VORTEX PORTABLE ENTERPRISE ZIP PACKAGE ⚡      ")
+    print("      [+] BUILDING VORTEX PORTABLE ENTERPRISE ZIP PACKAGE [+]      ")
     print("=" * 68)
     clean_pycache()
 

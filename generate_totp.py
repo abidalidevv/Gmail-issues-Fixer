@@ -7,7 +7,7 @@ import sys
 
 def get_totp(secret: str, interval: int = 30) -> str:
     """Generate 6-digit TOTP code from Base32 secret without any third-party dependencies."""
-    cleaned_secret = secret.replace(" ", "").strip().upper()
+    cleaned_secret = secret.replace(" ", "").replace("-", "").replace("=", "").strip().upper()
     # Add padding if missing
     missing_padding = len(cleaned_secret) % 8
     if missing_padding:
