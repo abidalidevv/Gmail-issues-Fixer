@@ -74,7 +74,7 @@ def recover_account_native(
                 d(text="Next").click()
             else:
                 device.inject_key(66, device_id)
-            time.sleep(2.5)
+            time.sleep(1.0)
 
             # Check if Account not found or disabled
             if d(textContains="Couldn't find your Google Account").exists(timeout=2):
@@ -87,18 +87,18 @@ def recover_account_native(
             # 3. Enter Password
             _log("Waiting for Password field...")
             pwd_field = d(type="password")
-            if not pwd_field.exists(timeout=8):
+            if not pwd_field.exists(timeout=6):
                 pwd_field = d(className="android.widget.EditText")
 
-            if pwd_field.exists(timeout=4):
+            if pwd_field.exists(timeout=3):
                 _log("Entering password...")
                 pwd_field.set_text(password)
-                time.sleep(0.5)
+                time.sleep(0.3)
                 if d(text="Next").exists(timeout=3):
                     d(text="Next").click()
                 else:
                     device.inject_key(66, device_id)
-                time.sleep(3)
+                time.sleep(1.2)
             else:
                 _log("Password field not detected.")
 

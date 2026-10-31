@@ -50,8 +50,18 @@ def save_proxy_config(proxy_cfg: Dict[str, Any]) -> bool:
         print(f"Error saving proxy config: {e}")
         return False
 
-def get_public_ip() -> str:
-    """Query current public IP directly from external API."""
+_http_session = requests.Session()
+_ip_cache = {
+    "ip": "Unknown",
+    "timestamp": 0.0
+}
+
+def get_public_ip(force: bool = False) -> str:
+    """Query current public IP directly with 6-second in-memory TTL to avoid blocking latency."""
+    now = time.time()
+    if not force and _ip_cache["ip"] != "Unknown" and (now - _ip_cache["timestamp"]) < 6.0:
+        return _ip_cache["ip"]
+
     services = [
         "https://api.ipify.org",
         "https://ifconfig.me/ip",
@@ -59,12 +69,15 @@ def get_public_ip() -> str:
     ]
     for url in services:
         try:
-            r = requests.get(url, timeout=4)
+            r = _http_session.get(url, timeout=3)
             if r.status_code == 200 and len(r.text.strip()) <= 45 and "." in r.text:
-                return r.text.strip()
+                resolved = r.text.strip()
+                _ip_cache["ip"] = resolved
+                _ip_cache["timestamp"] = now
+                return resolved
         except Exception:
             continue
-    return "Unknown"
+    return _ip_cache["ip"] if _ip_cache["ip"] != "Unknown" else "Unknown"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Huawei HiLink 4G Dongle/Wingle API (192.168.8.1)
@@ -139,7 +152,7 @@ class HuaweiDongle:
 
         # Wait for carrier reconnection (up to 10s)
         time.sleep(4)
-        new_ip = get_public_ip()
+        new_ip = get_public_ip(force=True)
         return {"status": "SUCCESS", "new_ip": new_ip, "timestamp": time.strftime("%H:%M:%S"), "source": "Huawei 4G Dongle"}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -180,7 +193,7 @@ class ZTEDongle:
                 timeout=5
             )
             time.sleep(4)
-            new_ip = get_public_ip()
+            new_ip = get_public_ip(force=True)
             return {"status": "SUCCESS", "new_ip": new_ip, "timestamp": time.strftime("%H:%M:%S"), "source": "ZTE 4G Dongle"}
         except Exception as e:
             return {"status": "ERROR", "message": f"ZTE rotate error: {e}"}
@@ -196,7 +209,7 @@ def rotate_via_webhook(webhook_url: str) -> Dict[str, Any]:
     try:
         r = requests.get(webhook_url, timeout=12)
         time.sleep(3)  # Allow carrier lease to renew
-        new_ip = get_public_ip()
+        new_ip = get_public_ip(force=True)
         return {
             "status": "SUCCESS",
             "new_ip": new_ip,
@@ -255,3 +268,4 @@ def check_all_proxy_sources() -> Dict[str, Any]:
         "zte_dongle": zte,
         "timestamp": time.strftime("%H:%M:%S")
     }
+

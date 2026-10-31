@@ -37,55 +37,68 @@ def run_adb_cmd(cmd: List[str], timeout: int = 15, device_id: Optional[str] = No
     except Exception as e:
         return f"ERROR: {e}"
 
+_device_cache = {
+    "timestamp": 0.0,
+    "devices": []
+}
+
 def get_all_connected_devices() -> List[Dict[str, Any]]:
-    """Return telemetry for ALL connected Android phones (OnePlus, Tecno, etc.)."""
+    """Return telemetry for ALL connected Android phones with 6s TTL cache to eliminate USB polling lag."""
+    now = time.time()
     devices_out = run_adb_cmd(["devices"])
     if "ERROR" in devices_out:
         return []
 
     lines = [line.strip() for line in devices_out.splitlines() if line.strip()]
+    current_serials = sorted([line.split("\t")[0] for line in lines[1:] if "\tdevice" in line])
+
+    cached_serials = sorted([d["id"] for d in _device_cache.get("devices", [])])
+    if current_serials == cached_serials and (now - _device_cache.get("timestamp", 0.0)) < 6.0:
+        return _device_cache["devices"]
+
     devs = []
-    for line in lines[1:]:
-        if "\tdevice" in line:
-            dev_id = line.split("\t")[0]
-            batch_cmd = (
-                "echo MODEL:$(getprop ro.product.model);"
-                "echo BRAND:$(getprop ro.product.brand);"
-                "echo ANDROID:$(getprop ro.build.version.release);"
-                "echo SIM:$(getprop gsm.sim.operator.alpha);"
-                "dumpsys battery | grep level:"
-            )
-            output = run_adb_cmd(["shell", batch_cmd], timeout=8, device_id=dev_id)
+    for dev_id in current_serials:
+        batch_cmd = (
+            "echo MODEL:$(getprop ro.product.model);"
+            "echo BRAND:$(getprop ro.product.brand);"
+            "echo ANDROID:$(getprop ro.build.version.release);"
+            "echo SIM:$(getprop gsm.sim.operator.alpha);"
+            "dumpsys battery | grep level:"
+        )
+        output = run_adb_cmd(["shell", batch_cmd], timeout=8, device_id=dev_id)
 
-            model = brand = android_ver = sim_operator = "Unknown"
-            battery_level = "--"
+        model = brand = android_ver = sim_operator = "Unknown"
+        battery_level = "--"
 
-            for bline in output.splitlines():
-                bline = bline.strip()
-                if bline.startswith("MODEL:"):
-                    model = bline[6:].strip() or "Unknown"
-                elif bline.startswith("BRAND:"):
-                    brand = bline[6:].strip() or "Unknown"
-                elif bline.startswith("ANDROID:"):
-                    android_ver = bline[8:].strip() or "Unknown"
-                elif bline.startswith("SIM:"):
-                    sim_operator = bline[4:].strip() or ""
-                elif "level:" in bline:
-                    try:
-                        battery_level = bline.split(":")[1].strip() + "%"
-                    except Exception:
-                        pass
+        for bline in output.splitlines():
+            bline = bline.strip()
+            if bline.startswith("MODEL:"):
+                model = bline[6:].strip() or "Unknown"
+            elif bline.startswith("BRAND:"):
+                brand = bline[6:].strip() or "Unknown"
+            elif bline.startswith("ANDROID:"):
+                android_ver = bline[8:].strip() or "Unknown"
+            elif bline.startswith("SIM:"):
+                sim_operator = bline[4:].strip() or ""
+            elif "level:" in bline:
+                try:
+                    battery_level = bline.split(":")[1].strip() + "%"
+                except Exception:
+                    pass
 
-            devs.append({
-                "id": dev_id,
-                "name": f"{brand.capitalize()} {model}",
-                "model": model,
-                "brand": brand,
-                "android": f"Android {android_ver}",
-                "carrier": sim_operator or "Sim Active (4G/LTE)",
-                "battery": battery_level,
-                "status": "ONLINE"
-            })
+        devs.append({
+            "id": dev_id,
+            "name": f"{brand.capitalize()} {model}",
+            "model": model,
+            "brand": brand,
+            "android": f"Android {android_ver}",
+            "carrier": sim_operator or "Sim Active (4G/LTE)",
+            "battery": battery_level,
+            "status": "ONLINE"
+        })
+
+    _device_cache["timestamp"] = now
+    _device_cache["devices"] = devs
     return devs
 
 def get_connected_device() -> Optional[Dict[str, Any]]:

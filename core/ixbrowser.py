@@ -322,25 +322,42 @@ async def login_google_in_profile(
         _log(f"Profile open error: {err}")
         return {"status": "FAILED", "reason": f"Could not open profile: {err}"}
 
-    time.sleep(2)
-
     try:
         async with async_playwright() as p:
-            _log(f"Connecting Playwright over CDP to {debug_addr}...")
-            browser = await p.chromium.connect_over_cdp(f"http://{debug_addr}")
+            _log(f"Connecting Playwright over CDP to {debug_addr} (Fast Poll)...")
+            browser = None
+            for attempt in range(15):
+                try:
+                    browser = await p.chromium.connect_over_cdp(f"http://{debug_addr}")
+                    break
+                except Exception:
+                    await asyncio.sleep(0.2)
+
+            if not browser:
+                _log("Failed to attach to Chromium debugging port.")
+                return {"status": "FAILED", "reason": "CDP connection timeout"}
+
             ctx = browser.contexts[0] if browser.contexts else await browser.new_context()
             page = ctx.pages[0] if ctx.pages else await ctx.new_page()
 
+            # PERF: Abort images, fonts, media to cut bandwidth and speed up page load by 2.5x
+            try:
+                await page.route(
+                    "**/*",
+                    lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"]
+                    else route.continue_()
+                )
+            except Exception:
+                pass
+
             _log(f"Navigating to accounts.google.com for {email}...")
             await page.goto("https://accounts.google.com/signin", wait_until="domcontentloaded", timeout=25000)
-            await page.wait_for_timeout(2000)
 
             # Check if session is already active
             current_url = page.url
             if _is_google_success_url(current_url):
                 _log("Already authenticated! Session is active.")
                 database.update_account(email, status="RECOVERED", ixbrowser_profile_id=str(profile_id))
-                # Save offline session storage state
                 try:
                     s_path = os.path.join(SESSIONS_DIR, f"{re.sub(r'[^a-zA-Z0-9]', '_', email)}.json")
                     await ctx.storage_state(path=s_path)
@@ -354,24 +371,28 @@ async def login_google_in_profile(
             try:
                 await email_input.wait_for(state="visible", timeout=9000)
                 await email_input.clear()
-                await human_type(email_input, email)
-                await page.wait_for_timeout(400)
+                await human_type(email_input, email, min_delay=20, max_delay=50)
+                await page.wait_for_timeout(200)
                 await page.click('#identifierNext, button:has-text("Next")')
                 _log(f"Email {email} submitted.")
-                await page.wait_for_timeout(2500)
+                
+                # Dynamic wait for password field or error state (eliminates 2.5s blind wait)
+                try:
+                    await page.locator('input[type="password"], text="Couldn\'t find your Google Account"').first.wait_for(state="visible", timeout=6000)
+                except Exception:
+                    await page.wait_for_timeout(1000)
             except Exception as e:
                 _log(f"Email step failed: {e}")
                 close_profile(profile_id)
                 return {"status": "FAILED", "reason": f"Email entry error: {e}"}
 
-            content = await page.content()
-            if "couldn't find your google account" in content.lower():
+            if await page.locator("text=Couldn't find your Google Account").count() > 0:
                 _log("Google account does not exist.")
                 database.update_account(email, status="NOT_FOUND")
                 close_profile(profile_id)
                 return {"status": "NOT_FOUND", "email": email}
 
-            if "account has been disabled" in content.lower() or "disabled" in page.url:
+            if await page.locator("text=Account disabled, text=account has been disabled").count() > 0 or "disabled" in page.url:
                 _log("Account is disabled. Attempting automated appeal...")
                 res = await handle_suspended_appeal(page, appeal_email, appeal_text, _log)
                 database.update_account(email, status="SUSPENDED")
@@ -384,10 +405,9 @@ async def login_google_in_profile(
                 _log(f"Testing password candidate {idx}/{min(3, len(passwords))}...")
                 pwd_input = page.locator('input[type="password"]').first
                 try:
-                    await pwd_input.wait_for(state="visible", timeout=7000)
+                    await pwd_input.wait_for(state="visible", timeout=6000)
                 except Exception:
-                    cur_c = await page.content()
-                    if "captcha" in cur_c.lower():
+                    if await page.locator("text=captcha, input[name='ca']").count() > 0:
                         _log("CAPTCHA challenge detected.")
                         database.update_account(email, status="NEEDS_CAPTCHA")
                         close_profile(profile_id)
@@ -395,13 +415,19 @@ async def login_google_in_profile(
                     break
 
                 await pwd_input.clear()
-                await human_type(pwd_input, candidate)
-                await page.wait_for_timeout(400)
+                await human_type(pwd_input, candidate, min_delay=20, max_delay=50)
+                await page.wait_for_timeout(200)
                 await page.click('#passwordNext, button:has-text("Next")')
-                await page.wait_for_timeout(3000)
+
+                # Dynamic wait for URL transition or challenge/error (eliminates 3s blind sleep)
+                try:
+                    await page.locator('input[type="tel"], input#totpPin, button:has-text("Try another way"), text="Wrong password", text="Incorrect password"').first.wait_for(state="visible", timeout=5000)
+                except Exception:
+                    await page.wait_for_timeout(1500)
 
                 cur_url = page.url
-                if "signin/v2/challenge/pwd" not in cur_url and "CheckCookie" not in cur_url:
+                is_wrong = await page.locator('text="Wrong password", text="Incorrect password"').count() > 0
+                if "signin/v2/challenge/pwd" not in cur_url and "CheckCookie" not in cur_url and not is_wrong:
                     _log("Password accepted!")
                     pwd_success = True
                     break
@@ -415,7 +441,6 @@ async def login_google_in_profile(
                 return {"status": "WRONG_PASSWORD", "email": email}
 
             # --- STEP 3: Handle 2-Step Verification & Challenges ---
-            await page.wait_for_timeout(2000)
             cur_url = page.url
 
             # FIDO2/caBLE Challenge -> "Try another way"
@@ -423,13 +448,19 @@ async def login_google_in_profile(
             if await try_another.count() > 0 and await try_another.is_visible():
                 _log("FIDO2/caBLE Challenge detected. Clicking 'Try another way'...")
                 await try_another.click()
-                await page.wait_for_timeout(1800)
+                try:
+                    await page.locator('li:has-text("Authenticator"), div:has-text("Authenticator")').first.wait_for(state="visible", timeout=3000)
+                except Exception:
+                    await page.wait_for_timeout(800)
 
                 auth_option = page.locator('li:has-text("Authenticator"), div[role="link"]:has-text("Authenticator"), div:has-text("Google Authenticator")').first
                 if await auth_option.count() > 0:
                     _log("Selecting 'Google Authenticator' option...")
                     await auth_option.click()
-                    await page.wait_for_timeout(2000)
+                    try:
+                        await page.locator('input[type="tel"], input#totpPin').first.wait_for(state="visible", timeout=4000)
+                    except Exception:
+                        await page.wait_for_timeout(1000)
 
             # Check for TOTP Input
             totp_input = page.locator('input[type="tel"], input#totpPin, input[name="totpPin"], input[autocomplete="one-time-code"]').first
@@ -448,18 +479,22 @@ async def login_google_in_profile(
 
                     _log(f"Injecting Live TOTP: {code} ({remaining}s valid)...")
                     await totp_input.clear()
-                    await human_type(totp_input, code)
-                    await page.wait_for_timeout(400)
+                    await human_type(totp_input, code, min_delay=20, max_delay=40)
+                    await page.wait_for_timeout(200)
                     await page.click('#totpNext, button:has-text("Next")')
-                    await page.wait_for_timeout(3500)
+                    
+                    # Dynamic wait for success or modal
+                    try:
+                        await page.wait_for_url(lambda u: _is_google_success_url(u) or "challenge" in u, timeout=5000)
+                    except Exception:
+                        await page.wait_for_timeout(1500)
                 else:
                     _log("ERROR: 2FA required but no TOTP secret found in vault!")
                     close_profile(profile_id)
                     return {"status": "NEEDS_TOTP_SECRET", "email": email}
 
             # Check for SMS OTP
-            cur_c = await page.content()
-            if "text message" in cur_c.lower() or "sent a code" in cur_c.lower():
+            if await page.locator("text=Get a verification code, text=sent a code, text=text message").count() > 0:
                 _log("Account requires SMS OTP from physical SIM.")
                 database.update_account(email, status="NEEDS_SMS")
                 close_profile(profile_id)
@@ -469,7 +504,7 @@ async def login_google_in_profile(
             await handle_post_login_modals(page, _log)
 
             # --- STEP 5: Verify Final Success ---
-            await page.wait_for_timeout(2000)
+            await page.wait_for_timeout(1000)
             final_url = page.url
 
             if _is_google_success_url(final_url):

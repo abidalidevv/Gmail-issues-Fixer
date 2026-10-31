@@ -16,6 +16,8 @@ import sqlite3
 from typing import Dict, Any, List
 
 SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
 
 def run_diagnostics() -> Dict[str, Any]:
     report = {
