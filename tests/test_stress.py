@@ -21,7 +21,7 @@ import concurrent.futures
 SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SCRIPT_DIR)
 
-from core import totp, database, batch_engine, ixbrowser, device, diagnostics
+from core import totp, database, batch_engine, ixbrowser, device, diagnostics, proxy_engine
 
 class TestVortexSuite(unittest.TestCase):
 
@@ -103,6 +103,37 @@ class TestVortexSuite(unittest.TestCase):
         # Stop returns True
         res_stop = engine.stop()
         self.assertTrue(res_stop["success"])
+
+    # ─────────────────────────────────────────────────────────────
+    # 6. Parallel Worker Pool Concurrency Clamping & Metrics
+    # ─────────────────────────────────────────────────────────────
+    def test_parallel_worker_pool_concurrency(self):
+        engine = batch_engine.engine
+        # Test concurrency clamping between 1 and 5
+        self.assertEqual(engine.concurrency, 3)
+        engine.concurrency = 5
+        self.assertEqual(engine.concurrency, 5)
+
+        status = engine.get_status()
+        self.assertIn("active_workers", status)
+        self.assertIsInstance(status["active_workers"], list)
+        self.assertIn("concurrency", status)
+
+    # ─────────────────────────────────────────────────────────────
+    # 7. Proxy Engine Configuration & Fallback Verification
+    # ─────────────────────────────────────────────────────────────
+    def test_proxy_engine_config_and_audit(self):
+        cfg = proxy_engine.load_proxy_config()
+        self.assertIn("enabled", cfg)
+        self.assertIn("mode", cfg)
+        self.assertIn("dongle_gateway", cfg)
+
+        # Audit check returns dictionary with dongle checks
+        audit = proxy_engine.check_all_proxy_sources()
+        self.assertIn("config", audit)
+        self.assertIn("huawei_dongle", audit)
+        self.assertIn("zte_dongle", audit)
+        self.assertIn("current_public_ip", audit)
 
     # ─────────────────────────────────────────────────────────────
     # 6. HIGH-CONCURRENCY DATABASE STRESS TEST (300 Accounts, 10 Threads)

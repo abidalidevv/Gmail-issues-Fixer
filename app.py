@@ -5,7 +5,7 @@ import urllib.parse
 import webbrowser
 from typing import Any
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from core import database, device, autopilot, totp, ixbrowser, batch_engine, diagnostics
+from core import database, device, autopilot, totp, ixbrowser, batch_engine, diagnostics, proxy_engine
 
 PORT = 8765
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -56,6 +56,14 @@ class RecoveryHandler(SimpleHTTPRequestHandler):
 
         elif path == "/api/batch/status":
             self.send_json(batch_engine.engine.get_status())
+            return
+
+        elif path == "/api/proxy/status":
+            self.send_json(proxy_engine.check_all_proxy_sources())
+            return
+
+        elif path == "/api/proxy/config":
+            self.send_json(proxy_engine.load_proxy_config())
             return
 
         elif path == "/api/screen":
@@ -135,7 +143,8 @@ class RecoveryHandler(SimpleHTTPRequestHandler):
         # ─── Batch Engine Controls ────────────────────────────────────
         if path == "/api/batch/start":
             max_accs = int(data.get("max_accounts", 300))
-            res = batch_engine.engine.start(max_accounts=max_accs)
+            concurrency = int(data.get("concurrency", 3))
+            res = batch_engine.engine.start(max_accounts=max_accs, concurrency=concurrency)
             self.send_json(res)
             return
 
@@ -151,6 +160,17 @@ class RecoveryHandler(SimpleHTTPRequestHandler):
 
         elif path == "/api/batch/stop":
             res = batch_engine.engine.stop()
+            self.send_json(res)
+            return
+
+        elif path == "/api/proxy/config":
+            saved = proxy_engine.save_proxy_config(data)
+            self.send_json({"success": saved})
+            return
+
+        elif path == "/api/proxy/rotate":
+            device_id = data.get("device_id")
+            res = proxy_engine.rotate_ip_universal(device_id=device_id)
             self.send_json(res)
             return
 

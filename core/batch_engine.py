@@ -1,18 +1,20 @@
 """
-VORTEX SUITE — Batch Auto Recovery Engine (300 Queue Orchestrator)
+VORTEX SUITE — Enterprise Batch Auto Recovery Engine (Parallel Multi-Worker 5x Speed)
 Features:
-- Automated queue processing for 300+ accounts
-- Dual-Lane intelligent dispatch: Lane A (ixBrowser CDP) or Lane B (UIAutomator2 Real Hardware)
-- Multi-Phone Round-Robin: balances between OnePlus 9 Pro and Tecno Spark 5 Pro
-- Rate Limit Protection: Dynamic jitter delays (8-15s), daily per-device quota safety
-- Auto 4G Carrier IP Rotation every N accounts
-- Graceful Start / Pause / Resume / Stop controls
+- Multi-Threaded Parallel Worker Pool (1x to 5x speedup)
+- Simultaneous ixBrowser Profile Execution with dynamic port isolation
+- Multi-Phone Round-Robin Hardware Fleet balancing (OnePlus + Tecno)
+- 4G Mobile Dongle & Proxy Rotation integration (Huawei, ZTE, Webhooks, Phone ADB)
+- Synchronized IP rotation barrier preventing worker TCP collisions
+- Dynamic Jitter & Socrates BotGuard evasion
+- Thread-safe runtime metrics & active worker telemetry
 """
 import time
 import random
 import threading
+import queue
 from typing import Dict, Any, List, Optional
-from core import database, autopilot, device
+from core import database, autopilot, device, ixbrowser, device_u2, proxy_engine
 
 class BatchEngine:
     def __init__(self):
@@ -22,22 +24,30 @@ class BatchEngine:
         self.stop_requested = False
         self.pause_requested = False
         
+        # Configuration
+        self.concurrency = 3  # Default 3 concurrent workers (up to 5x speed)
+        
         # Runtime metrics
         self.total = 0
         self.processed = 0
         self.recovered = 0
         self.failed = 0
-        self.current_email = ""
-        self.current_lane = ""
-        self.current_device = ""
-        self.current_step = ""
         self.started_at = ""
         self.device_usage: Dict[str, int] = {}
         self.device_round_robin_idx = 0
+        self.rotation_lock = threading.Lock()
+        self.accounts_since_rotation = 0
+
+        # Live telemetry per active worker
+        self.active_workers: Dict[int, Dict[str, Any]] = {}
 
     def get_status(self) -> Dict[str, Any]:
         with self.lock:
             pct = round((self.processed / self.total * 100), 1) if self.total > 0 else 0
+            workers_list = [v for k, v in self.active_workers.items()]
+            current_email = workers_list[0]["email"] if workers_list else "Standby"
+            current_lane = f"{len(workers_list)} Active Workers ({self.concurrency}x Parallel)" if workers_list else "Standby"
+
             return {
                 "state": self.state,
                 "total": self.total,
@@ -45,40 +55,43 @@ class BatchEngine:
                 "recovered": self.recovered,
                 "failed": self.failed,
                 "progress_pct": pct,
-                "current_email": self.current_email,
-                "current_lane": self.current_lane,
-                "current_device": self.current_device,
-                "current_step": self.current_step,
+                "concurrency": self.concurrency,
+                "current_email": current_email,
+                "current_lane": current_lane,
+                "active_workers": workers_list,
                 "started_at": self.started_at,
                 "device_usage": dict(self.device_usage)
             }
 
-    def start(self, account_ids: Optional[List[int]] = None, max_accounts: int = 300) -> Dict[str, Any]:
+    def start(self, account_ids: Optional[List[int]] = None, max_accounts: int = 300, concurrency: int = 3) -> Dict[str, Any]:
         with self.lock:
             if self.state == "RUNNING":
                 return {"success": False, "message": "Batch already running"}
             if self.state == "PAUSED":
                 self.pause_requested = False
                 self.state = "RUNNING"
-                autopilot.log("Resuming batch recovery queue...", "INFO")
+                autopilot.log("Resuming parallel batch recovery queue...", "INFO")
                 return {"success": True, "message": "Batch resumed"}
 
+            self.concurrency = max(1, min(concurrency, 5))  # Clamp between 1 and 5
             self.state = "RUNNING"
             self.stop_requested = False
             self.pause_requested = False
             self.processed = 0
             self.recovered = 0
             self.failed = 0
+            self.accounts_since_rotation = 0
+            self.active_workers.clear()
             self.started_at = time.strftime("%Y-%m-%d %H:%M:%S")
 
         self.worker_thread = threading.Thread(
-            target=self._run_queue, 
+            target=self._run_parallel_queue, 
             args=(account_ids, max_accounts), 
             daemon=True
         )
         self.worker_thread.start()
-        autopilot.log(f"Batch Auto Recovery started (Queue limit: {max_accounts})...", "SUCCESS")
-        return {"success": True, "message": "Batch engine started"}
+        autopilot.log(f"Multi-Threaded Parallel Batch Started ({self.concurrency}x Concurrent Workers, Max: {max_accounts})...", "SUCCESS")
+        return {"success": True, "message": f"Parallel batch started with {self.concurrency} workers"}
 
     def pause(self) -> Dict[str, Any]:
         with self.lock:
@@ -86,66 +99,53 @@ class BatchEngine:
                 return {"success": False, "message": "Batch is not running"}
             self.pause_requested = True
             self.state = "PAUSED"
-        autopilot.log("Batch recovery paused by user.", "WARN")
+        autopilot.log("Parallel batch paused by user.", "WARN")
         return {"success": True, "message": "Batch paused"}
 
     def resume(self) -> Dict[str, Any]:
-        return self.start()
+        return self.start(concurrency=self.concurrency)
 
     def stop(self) -> Dict[str, Any]:
         with self.lock:
             self.stop_requested = True
             self.state = "STOPPED"
-        autopilot.log("Batch recovery stopped by user.", "WARN")
+            self.active_workers.clear()
+        autopilot.log("Parallel batch stopped by user.", "WARN")
         return {"success": True, "message": "Batch stopping..."}
 
     def _select_device(self, online_devices: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        """Multi-phone round robin selector with daily limit guard (15 per phone)."""
+        """Multi-phone round robin selector with daily limit guard."""
         if not online_devices:
             return None
-        
-        # Filter devices that haven't hit max daily quota of 15
-        available = []
-        for d in online_devices:
-            did = d["id"]
-            if self.device_usage.get(did, 0) < 15:
-                available.append(d)
-        
+        available = [d for d in online_devices if self.device_usage.get(d["id"], 0) < 15]
         if not available:
-            # All available devices reached daily quota
-            autopilot.log("All connected devices reached daily quota (15/day). Cool down required.", "WARN")
             return None
-
-        # Round robin among available devices
         chosen = available[self.device_round_robin_idx % len(available)]
         self.device_round_robin_idx += 1
         return chosen
 
-    def _run_queue(self, account_ids: Optional[List[int]], max_accounts: int):
-        from core import ixbrowser, device_u2
+    def _maybe_rotate_ip(self):
+        """Coordinate periodic IP rotation across all workers safely."""
+        with self.rotation_lock:
+            self.accounts_since_rotation += 1
+            if self.accounts_since_rotation >= 3:
+                self.accounts_since_rotation = 0
+                autopilot.log("Periodic 3-account milestone: triggering clean IP rotation...", "WARN")
+                res = proxy_engine.rotate_ip_universal()
+                autopilot.log(f"IP Rotation Complete: {res.get('new_ip', 'Unknown')} (via {res.get('source', 'Carrier')})", "SUCCESS")
 
-        all_accounts = database.get_all_accounts()
-        if account_ids:
-            queue = [a for a in all_accounts if a["id"] in account_ids]
-        else:
-            # Process non-recovered accounts first
-            queue = [a for a in all_accounts if a.get("status") not in ("RECOVERED", "SUSPENDED")]
-
-        queue = queue[:max_accounts]
-        with self.lock:
-            self.total = len(queue)
-
-        autopilot.log(f"Loaded {self.total} pending accounts into automated recovery queue.", "INFO")
-
-        for idx, acc in enumerate(queue, start=1):
+    def _worker_task(self, worker_id: int, task_queue: queue.Queue):
+        """Single worker processing loop for parallel execution."""
+        while not self.stop_requested:
+            # Check pause
+            while self.pause_requested and not self.stop_requested:
+                time.sleep(1)
             if self.stop_requested:
                 break
-            
-            while self.pause_requested:
-                time.sleep(1)
-                if self.stop_requested:
-                    break
-            if self.stop_requested:
+
+            try:
+                acc = task_queue.get(timeout=1)
+            except queue.Empty:
                 break
 
             email = acc["email"]
@@ -154,54 +154,62 @@ class BatchEngine:
             profile_id = acc.get("ixbrowser_profile_id")
 
             with self.lock:
-                self.current_email = email
-                self.current_step = f"Processing ({idx}/{self.total})"
+                self.active_workers[worker_id] = {
+                    "worker_id": worker_id,
+                    "email": email,
+                    "lane": "Selecting Lane...",
+                    "step": "Starting",
+                    "status": "ACTIVE"
+                }
 
-            autopilot.log(f"[{idx}/{self.total}] Starting recovery for: {email}", "INFO")
+            autopilot.log(f"[Worker #{worker_id + 1}] Processing: {email}", "INFO")
 
-            # Route account to best lane
+            # Route to Lane A or Lane B
             result = None
-            lane_used = "UNKNOWN"
-
-            # Check if Lane A (ixBrowser) is preferred and profile exists
             ix_online, _ = ixbrowser.check_api_status()
-            if profile_id and ix_online:
-                lane_used = "Lane A (ixBrowser)"
+            disk_profiles = ixbrowser.get_local_profiles_from_disk()
+
+            # If account has profile or disk profiles exist, prefer Lane A (Parallel ixBrowser)
+            if profile_id or (ix_online and disk_profiles):
+                target_pid = profile_id or (disk_profiles[worker_id % len(disk_profiles)]["profile_id"] if disk_profiles else None)
+                lane_name = f"Lane A (ixBrowser Worker #{worker_id + 1})"
+
                 with self.lock:
-                    self.current_lane = lane_used
-                    self.current_device = f"ixBrowser Profile {profile_id}"
+                    self.active_workers[worker_id]["lane"] = lane_name
+                    self.active_workers[worker_id]["step"] = f"Profile {target_pid}"
 
                 try:
                     res = ixbrowser.run_sync_login(
-                        profile_id=int(profile_id),
+                        profile_id=target_pid,
                         email=email,
                         passwords=[pwd],
                         totp_secret=secret,
-                        log_cb=lambda m: autopilot.log(f"[ixBrowser] {m}", "INFO")
+                        worker_idx=worker_id,
+                        log_cb=lambda m: autopilot.log(f"[Worker #{worker_id + 1}] {m}", "INFO")
                     )
                     result = res
                 except Exception as e:
                     result = {"status": "FAILED", "reason": str(e)}
+
             else:
-                # Lane B: Physical Android Hardware (UIAutomator2 + ADB fallback)
-                lane_used = "Lane B (Android Hardware)"
+                # Lane B: Android Hardware
+                lane_name = f"Lane B (Phone Worker #{worker_id + 1})"
+                with self.lock:
+                    self.active_workers[worker_id]["lane"] = lane_name
+
                 online_devs = device.get_all_connected_devices()
                 target_dev = self._select_device(online_devs)
 
                 if not target_dev:
-                    autopilot.log(f"No available Android hardware online for {email}. Skipping Lane B.", "WARN")
+                    autopilot.log(f"[Worker #{worker_id + 1}] No Android hardware available for {email}.", "WARN")
                     result = {"status": "SKIPPED_NO_DEVICE"}
                 else:
                     dev_id = target_dev["id"]
                     dev_name = target_dev["name"]
                     with self.lock:
-                        self.current_lane = lane_used
-                        self.current_device = f"{dev_name} ({dev_id[:8]})"
+                        self.active_workers[worker_id]["step"] = f"{dev_name}"
                         self.device_usage[dev_id] = self.device_usage.get(dev_id, 0) + 1
 
-                    autopilot.log(f"Assigned {email} to {dev_name} (Round-Robin Usage: {self.device_usage[dev_id]}/15)", "INFO")
-
-                    # Run Lane B UIAutomator2 element recovery
                     try:
                         res = device_u2.recover_account_native(
                             device_id=dev_id,
@@ -214,38 +222,61 @@ class BatchEngine:
                     except Exception as e:
                         result = {"status": "FAILED", "reason": str(e)}
 
-            # Evaluate Result
+            # Process outcome
             st = result.get("status", "FAILED") if result else "FAILED"
+            database.update_account(email, status=st)
+
             with self.lock:
                 self.processed += 1
                 if st == "RECOVERED":
                     self.recovered += 1
                 else:
                     self.failed += 1
+                if worker_id in self.active_workers:
+                    del self.active_workers[worker_id]
 
-            database.update_account(email, status=st)
-            autopilot.log(f"Finished {email} -> Status: {st}", "SUCCESS" if st == "RECOVERED" else "WARN")
+            autopilot.log(f"[Worker #{worker_id + 1}] Finished {email} -> {st}", "SUCCESS" if st == "RECOVERED" else "WARN")
+            task_queue.task_done()
 
-            # Rate Limit Protection between accounts
-            if idx < self.total and not self.stop_requested:
-                jitter = random.randint(8, 15)
-                autopilot.log(f"Anti-detection cooldown: waiting {jitter}s before next account...", "INFO")
-                for _ in range(jitter):
-                    if self.stop_requested:
-                        break
-                    time.sleep(1)
+            # Anti-detection jitter cooldown
+            if not self.stop_requested and not task_queue.empty():
+                jitter = random.randint(4, 8)
+                time.sleep(jitter)
 
-                # Periodic IP rotation every 3 accounts on connected phone
-                if idx % 3 == 0:
-                    autopilot.log(f"Periodic 3-account milestone: triggering clean 4G IP rotation...", "WARN")
-                    device.rotate_carrier_ip()
+            # Check if milestone rotation needed
+            self._maybe_rotate_ip()
+
+    def _run_parallel_queue(self, account_ids: Optional[List[int]], max_accounts: int):
+        all_accounts = database.get_all_accounts()
+        if account_ids:
+            queue_items = [a for a in all_accounts if a["id"] in account_ids]
+        else:
+            queue_items = [a for a in all_accounts if a.get("status") not in ("RECOVERED", "SUSPENDED")]
+
+        queue_items = queue_items[:max_accounts]
+        with self.lock:
+            self.total = len(queue_items)
+
+        autopilot.log(f"Dispatching {self.total} accounts across {self.concurrency} parallel worker threads...", "INFO")
+
+        task_queue = queue.Queue()
+        for item in queue_items:
+            task_queue.put(item)
+
+        threads = []
+        for wid in range(self.concurrency):
+            th = threading.Thread(target=self._worker_task, args=(wid, task_queue), daemon=True)
+            threads.append(th)
+            th.start()
+
+        for th in threads:
+            th.join()
 
         with self.lock:
             self.state = "IDLE"
-            self.current_email = ""
-            self.current_step = "Completed"
-        autopilot.log(f"Batch Recovery Finished! Total: {self.total}, Recovered: {self.recovered}, Failed: {self.failed}", "SUCCESS")
+            self.active_workers.clear()
+
+        autopilot.log(f"All Parallel Workers Finished! Total: {self.total}, Recovered: {self.recovered}, Failed: {self.failed}", "SUCCESS")
 
 # Singleton instance
 engine = BatchEngine()
-

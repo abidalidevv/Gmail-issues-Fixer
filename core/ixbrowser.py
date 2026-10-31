@@ -129,11 +129,22 @@ def get_all_profiles(page: int = 1, limit: int = 100) -> List[Dict[str, Any]]:
     # Fallback to scanning disk profiles
     return get_local_profiles_from_disk()
 
-def open_profile(profile_id: Any) -> Tuple[Optional[str], Optional[str]]:
+def open_profile(profile_id: Any, worker_idx: int = 0, proxy_server: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
     """
     Open an ixBrowser profile and return (debugging_address, error_message).
     Supports numeric ID (via API) or folder hash (via direct kernel).
+    worker_idx assigns an isolated debugging port for parallel concurrency.
+    proxy_server injects dynamic HTTP/SOCKS5 mobile proxy.
     """
+    if not proxy_server:
+        try:
+            from core import proxy_engine
+            pcfg = proxy_engine.load_proxy_config()
+            if pcfg.get("enabled") and pcfg.get("proxy_server"):
+                proxy_server = pcfg["proxy_server"].strip()
+        except Exception:
+            pass
+
     # Try official API first
     if str(profile_id).isdigit():
         if IXBrowserClient:
@@ -163,15 +174,18 @@ def open_profile(profile_id: Any) -> Tuple[Optional[str], Optional[str]]:
     chrome_bin = find_ix_chrome_binary()
     profile_dir = os.path.join(IX_BROWSER_DATA, str(profile_id))
     if chrome_bin and os.path.exists(profile_dir):
-        port = 9222
+        # Calculate distinct port for parallel multi-worker execution
+        port = 9222 + (worker_idx * 5)
         cmd = [
             chrome_bin,
             f"--user-data-dir={profile_dir}",
             f"--remote-debugging-port={port}",
             "--no-first-run",
             "--no-default-browser-check",
-            "about:blank"
         ]
+        if proxy_server:
+            cmd.append(f"--proxy-server={proxy_server}")
+        cmd.append("about:blank")
         try:
             subprocess.Popen(cmd)
             time.sleep(2)
@@ -286,6 +300,8 @@ async def login_google_in_profile(
     totp_secret: Optional[str] = None,
     appeal_email: str = "abidmcs99@gmail.com",
     appeal_text: str = "This delegation account is used for business social media management.",
+    worker_idx: int = 0,
+    proxy_server: Optional[str] = None,
     log_cb = None
 ) -> Dict[str, Any]:
     """Automate Google login inside ixBrowser profile via Playwright over CDP."""
@@ -294,14 +310,14 @@ async def login_google_in_profile(
     def _log(msg: str):
         if log_cb:
             log_cb(msg)
-        print(f"[ixBrowser Profile {profile_id}] {msg}")
+        print(f"[ixBrowser Worker #{worker_idx + 1} Profile {profile_id}] {msg}")
 
     cfg = load_config()
     if not passwords:
         passwords = cfg.get("passwords_waterfall", ["Abidali@2xx", "Abidali@72xx", "Abidali2xx"])
 
-    _log(f"Opening ixBrowser profile {profile_id}...")
-    debug_addr, err = open_profile(profile_id)
+    _log(f"Opening ixBrowser profile {profile_id} (Worker #{worker_idx + 1})...")
+    debug_addr, err = open_profile(profile_id, worker_idx=worker_idx, proxy_server=proxy_server)
     if not debug_addr:
         _log(f"Profile open error: {err}")
         return {"status": "FAILED", "reason": f"Could not open profile: {err}"}

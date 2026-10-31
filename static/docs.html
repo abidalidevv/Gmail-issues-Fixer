@@ -557,6 +557,8 @@
             <div class="nav-section-title">Core Operations</div>
             <ul class="nav-list">
                 <li><a href="#batch-auto" class="nav-link"><span class="nav-icon">⚡</span> 300 Batch Auto Recovery</a></li>
+                <li><a href="#parallel-ix" class="nav-link"><span class="nav-icon">🌐</span> Parallel ixBrowser (5x Speed)</a></li>
+                <li><a href="#mobile-dongle" class="nav-link"><span class="nav-icon">📡</span> 4G Dongle & Proxy Router</a></li>
                 <li><a href="#multi-phone" class="nav-link"><span class="nav-icon">📱</span> Multi-Phone Fleet (Lane B)</a></li>
                 <li><a href="#authenticator-import" class="nav-link"><span class="nav-icon">📸</span> Authenticator QR Bulk Import</a></li>
                 <li><a href="#how-to-run" class="nav-link"><span class="nav-icon">🎮</span> Running the Suite</a></li>
@@ -698,21 +700,80 @@
 
             <!-- SECTION: 300 Batch Auto Recovery -->
             <section id="batch-auto">
-                <h2><span>⚡</span> 300 Batch Auto Recovery Engine (Autonomous Mode)</h2>
+                <h2><span>⚡</span> 300 Batch Auto Recovery Engine (Autonomous & Parallel Multi-Worker)</h2>
                 <div class="callout success">
                     <div class="callout-icon">🚀</div>
                     <div class="callout-body">
-                        <strong>Fully Autonomous Pipeline:</strong> 300 accounts ko ek ek karke manually click karne ki zaroorat nahi. Dashboard ke top banner par <strong><code>▶ Start Batch Auto</code></strong> dabayein, engine poori queue ko smart dual-lane routing, rate-limit cooldowns aur periodic IP rotation ke sath execute karega.
+                        <strong>Fully Autonomous Pipeline:</strong> 300 accounts ko ek ek karke manually click karne ki zaroorat nahi. Dashboard ke top banner par speed select karein (1x, 2x, 3x, ya 5x Turbo) aur <strong><code>▶ Start Batch Auto</code></strong> dabayein. Engine simultaneous parallel workers ke sath poori queue execute karega.
                     </div>
                 </div>
 
                 <h3>Key Features of the Batch Engine:</h3>
                 <ul style="padding-left: 1.5rem; margin-bottom: 1.25rem; color: #CBD5E1;">
                     <li style="margin-bottom: 0.4rem;"><strong>Dual-Lane Intelligent Dispatch:</strong> Agar account ke paas ixBrowser profile ho toh Lane A (Playwright CDP) use hoti hai, warna Lane B (Android Phone Fleet) ko de di jati hai.</li>
-                    <li style="margin-bottom: 0.4rem;"><strong>Anti-Detection Jitter:</strong> Har account ke baad 8–15 second ka randomized cooldown pause lagta hai ta ke Google ka Socrates AI engine suspicious burst activity na detect kare.</li>
-                    <li style="margin-bottom: 0.4rem;"><strong>Auto 4G Cellular IP Rotation:</strong> Har 3 accounts ke milestone par phone ka 4G IP automatically rotate hota hai.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Multi-Threaded Worker Pool:</strong> 1x se 5x speedup ke sath multiple accounts ek sath parallel recover hotay hain.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Anti-Detection Jitter:</strong> Har account ke baad 4–8 second ka randomized cooldown pause lagta hai ta ke Google ka Socrates AI engine suspicious burst activity na detect kare.</li>
+                    <li style="margin-bottom: 0.4rem;"><strong>Synchronized Carrier IP Rotation:</strong> Har 3 accounts ke milestone par automated cellular IP rotate hota hai.</li>
                     <li style="margin-bottom: 0.4rem;"><strong>Live Controls:</strong> Kisi bhi waqt <code>Pause (⏸)</code>, <code>Resume (▶)</code>, ya <code>Stop (⏹)</code> kiya ja sakta hai.</li>
                 </ul>
+            </section>
+
+            <!-- SECTION: Multi-Threaded Parallel ixBrowser -->
+            <section id="parallel-ix">
+                <h2><span>🌐</span> Multi-Threaded Parallel ixBrowser (5x Speed)</h2>
+                <p>
+                    Enterprise edition mein multiple ixBrowser profiles ko simultaneous background threads mein launch kiya jata hai:
+                </p>
+
+                <div class="callout info">
+                    <div class="callout-icon">⚡</div>
+                    <div class="callout-body">
+                        <strong>Dynamic Port Isolation Matrix:</strong> Har parallel worker ko apna alag remote debugging port assign hota hai taake TCP socket collisions na hon:
+                        <ul style="margin-top:0.4rem; padding-left:1.2rem;">
+                            <li>Worker 1: Port <code>9222</code></li>
+                            <li>Worker 2: Port <code>9227</code></li>
+                            <li>Worker 3: Port <code>9232</code></li>
+                            <li>Worker 4: Port <code>9237</code></li>
+                            <li>Worker 5: Port <code>9242</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p>
+                    <strong>Direct Kernel Offline Launch:</strong> Agar ixBrowser API band bhi ho, toh VORTEX local disk profiles ko read karke ixBrowser Chromium kernel (<code>chrome.exe</code>) ko direct remote debugging port ke sath spawn kar deta hai.
+                </p>
+            </section>
+
+            <!-- SECTION: 4G Mobile Dongle & Proxy Server Integration -->
+            <section id="mobile-dongle">
+                <h2><span>📡</span> 4G Mobile Dongle & Rotating Proxy Integration</h2>
+                <p>
+                    Google account recovery mein sabse ahem cheez genuine carrier IP address hota hai. VORTEX v2.0 mein dedicated mobile dongle aur proxy hardware support shamil hai:
+                </p>
+
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <span class="step-num">DEVICE 01</span>
+                        <div class="step-title">Huawei HiLink 4G Wingles</div>
+                        <p class="step-desc">
+                            E8372, E3372, E5573 modems (<code>192.168.8.1</code>) ke sath automated cellular data switch reset API integration.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">DEVICE 02</span>
+                        <div class="step-title">ZTE 4G Wingles & Modems</div>
+                        <p class="step-desc">
+                            MF79U, MF833V, MF920 modems (<code>192.168.0.1</code>) ke web API se network disconnect aur connect karke naya carrier IP lease hasil karta hai.
+                        </p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">SERVICE 03</span>
+                        <div class="step-title">Rotating Webhook Proxies</div>
+                        <p class="step-desc">
+                            iProxy.online ya MobileProxy ke webhook trigger URLs se har 3 accounts ke baad auto-IP refresh.
+                        </p>
+                    </div>
+                </div>
             </section>
 
             <!-- SECTION: Multi-Phone Round-Robin Fleet -->

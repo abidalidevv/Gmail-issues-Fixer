@@ -101,6 +101,23 @@ async function fetchBatchStatus() {
         curEmail.innerText = data.current_email || "Standby";
         curLane.innerText = `${data.current_lane || 'Standby'} ${data.current_device ? '• ' + data.current_device : ''}`;
 
+        // Render active parallel workers
+        const workersBox = document.getElementById("activeWorkersContainer");
+        if (workersBox && data.active_workers) {
+            if (data.active_workers.length === 0) {
+                workersBox.innerHTML = "";
+            } else {
+                workersBox.innerHTML = data.active_workers.map(w => `
+                    <div style="background:rgba(0, 242, 254, 0.08); border:1px solid rgba(0, 242, 254, 0.25); border-radius:6px; padding:0.35rem 0.6rem; font-size:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+                        <span style="font-weight:700; color:var(--accent-cyan);">Worker #${w.worker_id + 1}</span>
+                        <span style="font-family:var(--font-mono); color:#fff;">${escapeHtml(w.email)}</span>
+                        <span style="color:var(--text-muted);">[${escapeHtml(w.lane)}]</span>
+                        <span style="background:rgba(16, 185, 129, 0.2); color:#10B981; padding:1px 5px; border-radius:4px; font-weight:600;">${escapeHtml(w.step)}</span>
+                    </div>
+                `).join("");
+            }
+        }
+
         if (data.state === "RUNNING") {
             btnStart.style.display = "none";
             btnPause.style.display = "inline-block";
@@ -121,12 +138,14 @@ async function fetchBatchStatus() {
 }
 
 async function startBatchAuto() {
-    if (!confirm("Start full automated recovery queue for up to 300 accounts?\nEngine will auto-route via ixBrowser / Multi-phone hardware with rate-limit cooldowns.")) return;
+    const concSel = document.getElementById("batchConcurrency");
+    const concurrency = concSel ? parseInt(concSel.value) || 3 : 3;
+    if (!confirm(`Start full automated recovery queue for up to 300 accounts with ${concurrency}x Parallel Workers?\nEngine will auto-route via ixBrowser / Multi-phone hardware with rate-limit cooldowns.`)) return;
     try {
         const res = await fetch("/api/batch/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ max_accounts: 300 })
+            body: JSON.stringify({ max_accounts: 300, concurrency: concurrency })
         });
         const d = await res.json();
         fetchBatchStatus();
@@ -556,5 +575,113 @@ async function runDiagnosticsAudit() {
         box.innerHTML = `<div style="color:var(--danger); padding:1rem;">Failed to fetch diagnostics: ${escapeHtml(String(e))}</div>`;
         badge.innerText = "ERROR";
         badge.className = "status-tag SUSPENDED";
+    }
+}
+
+// ─── 📡 4G Mobile Dongle & Proxy Controller ──────────────────────────────────
+function openProxyModal() {
+    document.getElementById("proxyModal").style.display = "flex";
+    fetchProxyStatus();
+}
+
+function closeProxyModal() {
+    document.getElementById("proxyModal").style.display = "none";
+}
+
+function updateProxyFields() {
+    const mode = document.getElementById("proxyMode").value;
+    const gGw = document.getElementById("groupDongleGateway");
+    const gWb = document.getElementById("groupWebhook");
+    const gPx = document.getElementById("groupProxyServer");
+
+    gGw.style.display = (mode === "HUAWEI_DONGLE" || mode === "ZTE_DONGLE") ? "block" : "none";
+    gWb.style.display = (mode === "ROTATING_WEBHOOK") ? "block" : "none";
+    gPx.style.display = (mode === "DIRECT_PROXY" || mode === "ROTATING_WEBHOOK") ? "block" : "none";
+}
+
+async function fetchProxyStatus() {
+    try {
+        const res = await fetch("/api/proxy/status");
+        const data = await res.json();
+        const cfg = data.config || {};
+
+        document.getElementById("proxyEnabled").checked = !!cfg.enabled;
+        document.getElementById("proxyMode").value = cfg.mode || "PHONE_ADB";
+        document.getElementById("proxyGateway").value = cfg.dongle_gateway || "http://192.168.8.1";
+        document.getElementById("proxyWebhook").value = cfg.rotate_webhook_url || "";
+        document.getElementById("proxyServer").value = cfg.proxy_server || "";
+        document.getElementById("proxyRotateInterval").value = cfg.rotate_every_n_accounts || 3;
+
+        const ip = data.current_public_ip || "Unknown";
+        document.getElementById("proxyCurrentIpBadge").innerText = `IP: ${ip}`;
+        document.getElementById("telPublicIp").innerText = ip;
+
+        const hw = data.huawei_dongle || {};
+        document.getElementById("telHuaweiStatus").innerText = hw.online ? `Online (${hw.network_type || 'LTE'}, ${hw.signal_bars || '4'} bars)` : "Offline / Unreachable";
+        document.getElementById("telHuaweiStatus").style.color = hw.online ? "var(--success)" : "var(--text-muted)";
+
+        const zte = data.zte_dongle || {};
+        document.getElementById("telZteStatus").innerText = zte.online ? `Online (${zte.state || 'Connected'})` : "Offline / Unreachable";
+        document.getElementById("telZteStatus").style.color = zte.online ? "var(--success)" : "var(--text-muted)";
+
+        updateProxyFields();
+    } catch (e) {
+        console.error("Error fetching proxy status:", e);
+    }
+}
+
+async function saveProxySettings() {
+    const payload = {
+        enabled: document.getElementById("proxyEnabled").checked,
+        mode: document.getElementById("proxyMode").value,
+        dongle_gateway: document.getElementById("proxyGateway").value.trim(),
+        rotate_webhook_url: document.getElementById("proxyWebhook").value.trim(),
+        proxy_server: document.getElementById("proxyServer").value.trim(),
+        rotate_every_n_accounts: parseInt(document.getElementById("proxyRotateInterval").value) || 3
+    };
+
+    try {
+        const res = await fetch("/api/proxy/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        if (d.success) {
+            alert("✅ 4G Proxy / Dongle settings saved successfully!");
+            closeProxyModal();
+        } else {
+            alert("Error saving proxy settings.");
+        }
+    } catch (e) {
+        alert("Network error saving proxy settings: " + e);
+    }
+}
+
+async function triggerUniversalRotate() {
+    const badge = document.getElementById("proxyCurrentIpBadge");
+    badge.innerText = "Rotating...";
+    badge.className = "status-tag PENDING";
+
+    try {
+        const res = await fetch("/api/proxy/rotate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+            const newIp = data.new_ip || "New Lease Acquired";
+            badge.innerText = `IP: ${newIp}`;
+            badge.className = "status-tag RECOVERED";
+            document.getElementById("telPublicIp").innerText = newIp;
+            alert(`🎉 IP Rotation Successful!\nNew Public IP: ${newIp}\nRouted via: ${data.source || 'Carrier'}`);
+        } else {
+            badge.innerText = "Rotation Issue";
+            badge.className = "status-tag SUSPENDED";
+            alert(`⚠️ IP Rotation Warning: ${data.message || 'No IP change detected'}`);
+        }
+    } catch (e) {
+        alert("Rotation request failed: " + e);
     }
 }
