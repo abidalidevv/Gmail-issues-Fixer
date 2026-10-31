@@ -12,3 +12,4 @@ python -m core.diagnostics
 
 echo.
 pause
+

@@ -12,3 +12,4 @@ python build_release.py
 
 echo.
 pause
+
