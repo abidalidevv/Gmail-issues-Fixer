@@ -152,3 +152,4 @@ Gmail-issues-Fixer/
 
 * **48-Hour Cooldown:** Do not attach newly recovered accounts to email warm-up tools immediately. Allow security cookies to settle for 48 hours.
 * **Privacy:** All account credentials and session states remain local inside your private SQLite database (`vault.db`) and are excluded from Git commits via `.gitignore`.
+

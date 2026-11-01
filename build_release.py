@@ -17,7 +17,8 @@ EXCLUDE_DIRS = {
     ".idea",
     ".vscode",
     "vault_sessions",
-    "tests"
+    "tests",
+    "extra"
 }
 
 EXCLUDE_EXTS = {
