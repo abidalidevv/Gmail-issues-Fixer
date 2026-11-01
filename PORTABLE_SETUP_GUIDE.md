@@ -1,5 +1,8 @@
 # 🚀 VORTEX SUITE — Portable PC / Laptop Setup Guide
 
+> [!TIP]
+> **Permanent Safe Location:** This project is permanently preserved at **`D:\Projects\gmail issue fix`**. Because Drive D: is an independent drive, all accounts, SQLite vault, session files, and code remain 100% intact even after a Windows reinstallation!
+
 Follow these simple steps whenever you copy this folder to any other computer or laptop.
 
 ---

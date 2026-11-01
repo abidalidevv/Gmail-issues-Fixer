@@ -2,6 +2,8 @@
 > **CONFIDENTIAL ARCHITECTURAL SPECIFICATION & PROJECT HISTORY**  
 > *Target System: VORTEX Google Account Identity Orchestrator & Batch Recovery Suite*  
 > *Version: Enterprise v2.5 (Production Ready)*  
+> *Permanent Safe Workspace Path:* `D:\Projects\gmail issue fix` (Preserved across Windows reinstalls)  
+> *Original Workspace Path:* `C:\Users\Ali\Desktop\gmail issue fix`  
 > *Main Repository:* `https://github.com/abidalidevv/Gmail-issues-Fixer` (`main` branch)  
 > *Operating System:* Windows 10/11 64-bit · Python 3.10–3.14  
 > *Last Updated:* November 2026
@@ -258,11 +260,19 @@ The dashboard opens automatically in your browser at:
 
 ---
 
-## 7. Future AI Agent & Developer Roadmap
+## 7. Future AI Agent & Developer Roadmap (Windows Reinstallation Safe)
 
-If an AI agent or developer re-opens this repository in a future session, follow these guidelines:
+### 7.1 Canonical Safe Workspace Location
+> [!IMPORTANT]
+> **Permanent Safe Working Directory:** **`D:\Projects\gmail issue fix`**  
+> Whenever Windows is reinstalled, Drive C: (Desktop) will be wiped, but **Drive D: is safe and permanent**.
+> In any new AntiGravity IDE session or after reinstalling Windows, **ALWAYS open `D:\Projects\gmail issue fix` as the active project workspace**. All source code, Git history, local database (`vault.db`), and portable configurations reside here!
+
+### 7.2 Rules for Any Future Agent / Developer
 1. **Never Revert to Coordinate Clicking:** Lane B must always remain element-based (`core/device_u2.py`).
 2. **Preserve Isolated Port Matrix:** Lane A parallel profiles must use distinct debugging ports (`9222 + wid * 5`).
 3. **Database Index Integrity:** Any new queries on `accounts` must leverage existing indexes (`idx_accounts_email_lower`, `idx_accounts_status`).
 4. **Git Cleanliness:** Never commit `vault.db`, `vault_sessions/`, `.log`, or personal credentials. Keep `.gitignore` intact.
 5. **Release Packaging:** Whenever core files are modified, run `python build_release.py` to keep `VORTEX_SUITE_PORTABLE_LATEST.zip` updated.
+6. **Canonical Path:** The active project path is **`D:\Projects\gmail issue fix`**.
+

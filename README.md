@@ -1,6 +1,7 @@
 # ⚡ VORTEX SUITE — Enterprise Google Account Recovery & Identity Orchestrator
 > **Autonomous Dual-Lane Anti-Detection Recovery Suite for 300+ Dormant / caBLE QR-Locked Google Accounts**  
-> *Engineered for high-volume agency operations, warm-up preparation, and FIDO2 challenge bypass.*
+> *Engineered for high-volume agency operations, warm-up preparation, and FIDO2 challenge bypass.*  
+> *Canonical Workspace Path:* **`D:\Projects\gmail issue fix`** (Windows Reinstallation Safe)
 
 ---
 
